@@ -1,0 +1,36 @@
+ build directory
+/dist*
+
+# editor/IDE files
+.vscode
+
+# system files
+.DS_Store
+
+# node / npm
+node_modules
+*.log
+
+# jest stuff
+/jest/*
+/coverage
+
+# webdriver
+allure-*
+errorShots
+
+# env variables
+.env
+
+# flow annotations for npm packages
+flow-typed
+
+# temp files
+temp
+
+# secrets
+secrets*
+
+# IDE
+
+.idea

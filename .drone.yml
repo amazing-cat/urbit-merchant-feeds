@@ -1,0 +1,43 @@
+# Install dependencies, build & run tests
+build:
+  pull-request:
+    image: quay.io/urbit/java-workspace:latest
+    pull: true
+    commands:
+    - yarn
+    when:
+      event: pull_request
+  latest:
+    image: quay.io/urbit/java-workspace:latest
+    pull: true
+    environment:
+    - APP_ENV=prod
+    commands:
+    - yarn
+    when:
+      event: push
+      branch: master
+  stage:
+    image: quay.io/urbit/java-workspace:latest
+    pull: true
+    environment:
+    - APP_ENV=stage
+    commands:
+    - yarn
+    when:
+      event: tag
+      branch:
+      - refs/tags/v*[0-9].*[0-9].*[0-9]-rc       # Plain -rc
+      - refs/tags/v*[0-9].*[0-9].*[0-9]-rc*[0-9] # -rc.N's
+  prod:
+    image: quay.io/urbit/java-workspace:latest
+    pull: true
+    environment:
+    - APP_ENV=prod
+    commands:
+    - yarn
+    when:
+      event: tag
+      branch:
+      - refs/tags/v*[0-9].*[0-9].[0-9]      # Because of limitations with Unix Glob Patterns (born in 1969) we can't just
+      - refs/tags/v*[0-9].*[0-9].[0-9][0-9] # do `refs/tags/v*[0-9].*[0-9].*[0-9]` because that would also include -rc.N's

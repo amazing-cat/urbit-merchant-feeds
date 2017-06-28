@@ -1,0 +1,14 @@
+{
+  "name": "urbit-merchant-feeds",
+  "version": "1.0.0",
+  "description": "Feeds are one of many methods of delivering product data to the Urb-it platform.",
+  "main": "index.js",
+  "author": "Urb-it <teknik@urbit.com>",
+  "license": "MIT",
+  "dependencies": {
+    "ajv-cli": "^2.1.0",
+    "eslint": "^4.1.1",
+    "eslint-plugin-json": "^1.2.0",
+    "wetzel": "https://github.com/urbitassociates/wetzel#ATEAM-375_feed-docs"
+  }
+}
