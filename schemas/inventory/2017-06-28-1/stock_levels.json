@@ -1,0 +1,20 @@
+{
+  "$schema" : "http://json-schema.org/draft-04/schema",
+  "type": "object",
+  "id" : "stock_levels.json",
+  "description": "Stocklevels for product",
+  "title" : "stock_level",
+  "properties": {
+  "quantity": {
+    "type": "number",
+    "description": "Currently stocked items"
+  },
+  "location": {
+    "type": "string",
+    "description": "Location of current stock"
+    }
+  },
+  "required": [
+    "quantity", "location"
+  ]
+}

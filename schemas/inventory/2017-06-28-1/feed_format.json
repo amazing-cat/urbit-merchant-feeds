@@ -1,0 +1,15 @@
+{
+  "$schema" : "http://json-schema.org/draft-04/schema",
+  "id" : "feed_format.json",
+  "description" : "Format of the json file",
+  "title" : "feed_format",
+  "type": "object",
+  "properties": {
+    "encoding": {
+      "type": "string",
+      "description": "Encoding the file is using",
+      "enum": ["UTF-8"]
+    }
+  },
+  "required": ["encoding"]
+}

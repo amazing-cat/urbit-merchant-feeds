@@ -1,0 +1,206 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Inventory List",
+  "id" : "products.json",
+  "description": "List of inventory per location",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri",
+      "description": "Schema the feed is implementing"
+    },
+    "content_language": {
+      "type": "string",
+      "description": "The language used for content"
+    },
+    "content_type": {
+      "type": "string",
+      "description": "Describes the content of the feed"
+    },
+    "created_at": {
+      "type": "string",
+      "description": "The date product was created in the system"
+    },
+    "updated_at": {
+      "type": "string",
+      "description": "The date product was updated in the system"
+    },
+    "target_country": {
+      "type": "array",
+      "description": "Describe intended target audience of the feed"
+    },
+    "version": {
+      "type": "string",
+      "description": "State the version of the feed"
+    },
+    "feed_format": {
+      "$ref": "feed_format.json"
+    },
+    "schedule": {
+      "$ref": "schedule.json"
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description" : "Name or title of an item",
+            "type": "string"
+          },
+          "description": {
+            "description" : "Description or caption for an item",
+            "type": "string"
+          },
+          "id": {
+            "description" : "The ID is the Offer.Product.Sku",
+            "type": "string"
+          },
+          "gtin": {
+            "description" : "Gtin for the item",
+            "type": "string"
+          },
+          "mpn": {
+            "description" : "Manifacture identifier",
+            "type": "string"
+          },
+          "item_group_id" : {
+            "description" : "When there is an variant this uniquely binds variants to eachothers",
+            "type" : "string"
+          },
+          "urbit_product_type" : {
+            "type" : "string",
+            "description" : "Enables enforcing of required fields and validation",
+            "enum" : ["apparel","kitchen_items"]
+          },
+          "dimensions" : {"$ref" : "dimensions.json"},
+          "categories" : {
+            "description" : "Retailers list of categories an item belongs to",
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "name" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "prices" : {
+            "type" : "array",
+            "items" : {
+              "$ref": "price.json"
+            }
+          },
+          "brands" : {
+            "description" : "List of brands with properties",
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "name" : {
+                  "type" : "string"
+                }
+              },
+              "required" : ["name"]
+            }
+          },
+          "attributes" : {
+            "type" : "array",
+            "items" : {"$ref" : "attribute.json" }
+          },
+          "size" : {
+            "description" : "Local representation of a size such as XL or 36",
+            "type" : ["string","number","null"]
+          },
+          "sizeSystem" : {
+            "description" : "System to use for describing size",
+            "type" : ["string","null"],
+            "enum" : [
+              null,
+              "AU",
+              "BR",
+              "CN",
+              "DE",
+              "EU",
+              "FR",
+              "IT",
+              "JP",
+              "MEX",
+              "UK",
+              "US"
+            ]
+          },
+          "sizeType" : {
+            "description" : "Type for size",
+            "type" : ["string","null"],
+            "enum" : [
+              null,
+              "regular",
+              "petite",
+              "plus",
+              "big",
+              "tall",
+              "maternity"
+            ]
+          },
+          "color" : {
+            "description" : "Color of an item",
+            "type" : "string"
+          },
+          "gender" : {
+            "type" : ["string","null"],
+            "description" : "Gender of the item usually clothes",
+            "enum" : ["male","female","unisex",null]
+          },
+          "material" : {
+            "description" : "Material an item consists of",
+            "type" : "string"
+          },
+          "pattern"  : {
+            "description" : "If the item is separated by patterns",
+            "type" : ["string","null"]
+          },
+          "age_group" : {
+            "description" : "Target group of the item, ",
+            "type" : ["string","null"],
+            "enum" : [null,"newborn","infant","toddler","kids","adult"]
+          },
+          "condition" : {
+            "description" : "To sell new or old stuff",
+            "type" : "string",
+            "enum" : ["new","used","refurbished"]
+          },
+          "image_link" : {
+            "description" : "The main image link for an item",
+            "type" : "string"
+          },
+          "additional_image_links" : {
+            "type" : "array",
+            "description" : "Additional image links for an item",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "link" : {
+            "description" : "Back link to the product page of the item",
+            "type" : "string"
+          }
+        },
+        "required": ["id", "name", "description"]
+      }
+    }
+  },
+  "required": [
+    "$schema",
+    "content_language",
+    "attribute_language",
+    "content_type",
+    "target_country",
+    "version",
+    "feed_format",
+    "schedule",
+    "entities"
+  ]
+}
