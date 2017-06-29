@@ -8,8 +8,6 @@
   "dependencies": {
     "ajv": "^5.2.0",
     "ajv-cli": "^2.1.0",
-    "eslint": "^4.1.1",
-    "eslint-plugin-json": "^1.2.0",
     "wetzel": "https://github.com/urbitassociates/wetzel#ATEAM-375_feed-docs"
   },
   "scripts": {
@@ -26,5 +24,11 @@
     "gendoc:example:inventory" : "h='### Example Inventory Feed' nl='\\n' && c=\\`\\`\\`\\ && s=$(cat examples/inventory/inventory.json) && echo \"$nl$h$nl$c$nl$nl$s$nl$nl$c$nl\" >> docs/7_inventory.md",
     "gendoc:example:products" : "h='### Example Product Feed' nl='\\n' && c=\\`\\`\\`\\ && s=$(cat examples/products/products.json) && echo \"$nl$h$nl$c$nl$nl$s$nl$nl$c$nl\" >> docs/6_products.md",
     "gendoc:readme" : "cat docs/*.md > README.md"
+  },
+  "devDependencies": {
+    "eslint": "^4.1.1",
+    "eslint-config-prettier": "^2.2.0",
+    "eslint-config-urbit": "^3.1.0",
+    "eslint-plugin-json": "^1.2.0"
   }
 }
