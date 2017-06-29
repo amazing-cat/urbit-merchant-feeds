@@ -5,6 +5,8 @@ build:
     pull: true
     commands:
     - yarn
+    - yarn lint
+    - yarn test
     when:
       event: pull_request
   latest:
@@ -14,6 +16,9 @@ build:
     - APP_ENV=prod
     commands:
     - yarn
+    - yarn lint
+    - yarn test
+    - yarn build
     when:
       event: push
       branch: master
@@ -24,6 +29,9 @@ build:
     - APP_ENV=stage
     commands:
     - yarn
+    - yarn lint
+    - yarn test
+    - yarn build
     when:
       event: tag
       branch:
@@ -36,6 +44,9 @@ build:
     - APP_ENV=prod
     commands:
     - yarn
+    - yarn lint
+    - yarn test
+    - yarn build
     when:
       event: tag
       branch:

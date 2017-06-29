@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Inventory List",
+  "id" : "inventory.json",
+  "description": "List of inventory per location",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri",
+      "description": "Schema the feed is implementing"
+    },
+    "content_language": {
+      "type": "string",
+      "description": "The language used for content"
+    },
+    "content_type": {
+      "type": "string",
+      "description": "Describes the content of the feed"
+    },
+    "target_country": {
+      "type": "array",
+      "description": "Describe intended target audience of the feed"
+    },
+    "version": {
+      "type": "string",
+      "description": "State the version of the feed"
+    },
+    "feed_format": {
+      "$ref": "feed_format.json"
+    },
+    "schedule": {
+      "$ref": "schedule.json"
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier likely: Offer.Product.Sku"
+          },
+          "prices": {
+            "type": "array",
+            "items": {
+              "$ref": "price.json"
+            }
+          },
+          "stock_levels": {
+            "type": "array",
+            "items": {
+              "$ref": "stock_levels.json"
+            }
+          }
+        },
+        "required": ["id", "prices", "inventory"]
+      }
+    }
+  },
+  "required": [
+    "$schema",
+    "content_language",
+    "attribute_language",
+    "content_type",
+    "target_country",
+    "version",
+    "feed_format",
+    "schedule",
+    "entities"
+  ]
+}

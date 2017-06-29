@@ -1,0 +1,27 @@
+{
+  "$schema" : "http://json-schema.org/draft-04/schema",
+  "id" : "attribute.json",
+  "type" : "object",
+  "title" : "Attributes",
+  "description" : "Allows the customer to specify additional attributes",
+  "properties" : {
+    "name" : {
+      "type" : "string",
+      "description" : "Name / Title of the attribute"
+    },
+    "type" : {
+      "type": "string",
+      "description" : "The type of the attribute",
+      "enum": [ "string", "number","boolean","datetimerange","float","text","time","url"]
+    },
+    "unit" : {
+      "description" : "A unit describing the attribute",
+      "type" : ["string","null"]
+    },
+    "value" : {
+      "description" : "The actual value of the attribute",
+      "type" : ["string","number","boolean"]
+    }
+  },
+  "required" : ["name","type","value"]
+}

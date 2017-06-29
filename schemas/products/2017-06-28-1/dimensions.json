@@ -1,0 +1,58 @@
+{
+  "$schema" : "http://json-schema.org/draft-04/schema",
+  "id" : "dimensions.json",
+  "title" : "Dimensions",
+  "type": "object",
+  "description" : "Dimensions of the product",
+  "properties" : {
+    "width" : {
+      "type" : "object",
+      "description" : "Width of an product",
+      "properties" : {
+        "value" : {
+          "type": [ "string", "number"]
+        },
+        "unit" : {
+          "type" : "string"
+        }
+      }
+    },
+    "length" : {
+      "type" : "object",
+      "description" : "Length of an product",
+      "properties" : {
+        "value" : {
+          "type": [ "string", "number"]
+        },
+        "unit" : {
+          "type" : "string"
+        }
+      }
+    },
+    "height" : {
+      "type" : "object",
+      "description" : "Height of an product",
+      "properties" : {
+        "value" : {
+          "type": [ "string", "number"]
+        },
+        "unit" : {
+          "type" : "string"
+        }
+      }
+    },
+    "weight" : {
+      "type" : "object",
+      "description" : "Weight of an product",
+      "properties" : {
+        "value" : {
+          "type": [ "string", "number"]
+        },
+        "unit" : {
+          "type" : "string"
+        }
+      }
+    }
+  },
+  "additionalProperties" : false
+}

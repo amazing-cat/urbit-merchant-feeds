@@ -1,0 +1,31 @@
+{
+  "$schema" : "http://json-schema.org/draft-04/schema",
+  "title" : "price",
+  "id" : "price.json",
+  "type": "object",
+  "description": "Type of prices used",
+    "properties": {
+    "currency": {
+      "type": "string",
+      "description": "Format from Offer.PriceSpecification.priceCurrency"
+    },
+    "value": {
+      "type": "number",
+      "description": "Format from Offer.PriceSpecification.price"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["regular", "sale"],
+      "description": "Indicates the type of price"
+    },
+    "price_effective_date": {
+      "type": "string",
+      "description": "2016-02-24T13:00-0800/2016-02-29T15:30-0800"
+    },
+    "vat": {
+      "type": "number",
+      "description": "Format"
+    }
+  },
+  "required": ["currency", "value", "type"]
+}

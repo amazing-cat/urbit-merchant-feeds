@@ -1,0 +1,91 @@
+{
+  "$schema" : "https://raw.githubusercontent.com/urbitassociates/urbit-merchant-feeds/master/schemas/products/2017-06-28-1/products.json",
+  "content_language" : "sv",
+  "attribute_language" : "sv",
+  "content_type" : "products",
+  "target_country" : ["SE"],
+  "version" : "2017-01-20-1",
+  "feed_format" : {
+    "encoding" : "UTF-8"
+  },
+  "schedule" : {
+    "interval" : "HOURLY"
+  },
+  "entities" : [{
+    "name" : "Coffe Mugg",
+    "description" : "Drink coffe and feel refreshed",
+    "id" : "sku",
+    "gtin" : "1455582344",
+    "mpn" : "43509",
+    "dimensions" : {
+      "height" : {
+        "value" : 30,
+        "unit" : "cm"
+      },
+      "length" : {
+        "value" : 30,
+        "unit" : "cm"
+      },
+      "width" : {
+        "value" : 30,
+        "unit" : "cm"
+      },
+      "weight" : {
+        "value" : 30,
+        "unit" : "kg"
+      }
+    },
+    "categories" : [{"name":"Porslin"},{"name":"Mugg"}],
+    "item_group_id" : "11",
+    "prices": [{
+      "currency": "SEK",
+      "value": 10000,
+      "price_effective_date": "2016-02-24T13:00-0800/2016-02-29T15:30-0800",
+      "type": "regular",
+      "vat": 10000
+    }],
+    "brands" : [
+      {
+        "name" : "Rörstrand"
+      },
+      {
+        "name" : "Swedish"
+      }
+    ],
+    "attributes" : [
+      {
+        "name" : "volume",
+        "type" : "number",
+        "unit" : "cl",
+        "value" : 45
+      },
+      {
+        "name" : "mikrovågsugn",
+        "type" : "string",
+        "unit" : null,
+        "value" : "Ja"
+      },
+      {
+        "name" : "ungssäker",
+        "type" : "boolean",
+        "unit" : null,
+        "value" : true
+      }
+    ],
+    "size" : null,
+    "sizeSystem" : null,
+    "sizeType" : null,
+    "color" : "rosa",
+    "gender" : null,
+    "material" : "porslin",
+    "pattern" : null,
+    "age_group" : null,
+    "condition" : "new",
+    "image_link" : "https://unsplash.it/g/200/300",
+    "additional_image_links" : [
+      "https://unsplash.it/200/300/?random",
+      "https://unsplash.it/200/300/?random"
+    ],
+    "link" : "https://example.com/product/page/"
+  }]
+}
