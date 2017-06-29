@@ -1,11 +1,3 @@
-
-## Contribution
-
-Feel free to contribute to the feeds and with for generation of them.
-Add tools and libraries for feed generation to the tools folder.
-
-
-
 # Urb-it Merchant Feeds
 
 Feeds are one of many methods of delivering product data to
@@ -734,4 +726,12 @@ Location of current stock
 }
 
 ``` 
+
+
+## Contribution
+
+Feel free to contribute to the feeds and with for generation of them.
+Add tools and libraries for feed generation to the tools folder.
+
+
 
