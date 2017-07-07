@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<config>
+	<modules>
+		<Urber_ProductFeed>
+			<version>0.1.0</version>
+		</Urber_ProductFeed>
+	</modules>
+
+	<!-- FRONTEND -->
+
+	<frontend>
+		<routers>
+			<productfeed>
+				<use>standard</use>
+				<args>
+					<module>Urber_ProductFeed</module>
+					<frontName>urber_productfeed</frontName>
+				</args>
+			</productfeed>
+		</routers>
+		<layout>
+			<updates>
+				<productfeed>
+					<file>urber/productfeed.xml</file>
+				</productfeed>
+			</updates>
+		</layout>
+	</frontend>
+
+	<!-- GLOBAL -->
+
+	<global>
+		<helpers>
+			<productfeed>
+				<class>Urber_ProductFeed_Helper</class>
+			</productfeed>
+		</helpers>
+		<blocks>
+			<productfeed>
+				<class>Urber_ProductFeed_Block</class>
+			</productfeed>
+		</blocks>
+		<models>
+			<productfeed>
+				<class>Urber_ProductFeed_Model</class>
+				<resourceModel>productfeed_mysql4</resourceModel>
+			</productfeed>
+		</models>
+	</global>
+
+	<!-- ADMIN -->
+
+	<admin>
+		<routers>
+			<productfeed>
+				<use>admin</use>
+				<args>
+					<module>Urber_ProductFeed</module>
+					<frontName>admin_productfeed</frontName>
+				</args>
+			</productfeed>
+		</routers>
+	</admin>
+
+	<!-- CRON -->
+
+	<crontab>
+		<jobs>
+			<productfeed_generatefeed>
+				<schedule><cron_expr>0 * * * *</cron_expr></schedule>
+				<run><model>productfeed/cron::generateFeed</model></run>
+			</productfeed_generatefeed>
+		</jobs>
+	</crontab>
+
+	<!-- CONFIG DEFAULTS -->
+
+	<default>
+		<productfeed_config>
+			<cron>
+				<cache_duration>3600</cache_duration>
+			</cron>
+			<filter>
+				<category></category>
+				<tag></tag>
+				<manufacturer></manufacturer>
+				<stock>0</stock>
+			</filter>
+		</productfeed_config>
+	</default>
+</config>

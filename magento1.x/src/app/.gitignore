@@ -1,0 +1,13 @@
+code/community
+code/core
+design/*
+locale/*
+etc/*
+.htaccess
+bootstrap.php
+Mage.php
+
+!code/local/Urber/
+!etc/modules/Urber_*
+!design/frontend/base/default/layout/urber/
+!design/frontend/base/default/template/urber/
