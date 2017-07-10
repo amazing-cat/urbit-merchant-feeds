@@ -1,19 +1,14 @@
 <?php
 
+/**
+ * Class Urber_ProductFeed_Model_Config
+ *
+ * @property array cron
+ * @property array filter
+ * @property array fields
+ */
 class Urber_ProductFeed_Model_Config
 {
-    /**
-     * Default configuration fields
-     * @var array
-     */
-    protected $_configDefault = [
-        'category'       => [],
-        'tag'            => [],
-        'manufacturer'   => [],
-        'stock'          => false,
-        'cache_duration' => 3600,
-    ];
-
     /**
      * Current configuration
      * @var array
@@ -26,19 +21,14 @@ class Urber_ProductFeed_Model_Config
     public function __construct()
     {
         $this->load();
-        $this->_config = $this->_config + $this->_configDefault;
     }
 
     /**
-     * @return bool status of fetching data from db
+     * Load configuration from magento scope
      */
     public function load()
     {
-        // TODO: Load configuration from db
-        $this->_config = array();
-        $config = Mage::getStoreConfig('productfeed_config');
-
-        return true;
+        $this->_config = Mage::getStoreConfig('productfeed_config');
     }
 
     /**
@@ -57,8 +47,22 @@ class Urber_ProductFeed_Model_Config
      */
     public function get($name)
     {
+        $param = false;
+
+        if (stripos($name, '/')) {
+            list($name, $param) = explode('/', $name);
+        }
+
         if (!isset($this->_config[$name])) {
             throw new Exception("Try to get unknown configuration field - `{$name}`");
+        }
+
+        if ($param !== false) {
+            if (!isset($this->_config[$name][$param])) {
+                throw new Exception("Try to get unknown parameter of configuration field - `{$name}/{$param}`");
+            }
+
+            return $this->_config[$name][$param];
         }
 
         return $this->_config[$name];
@@ -72,11 +76,26 @@ class Urber_ProductFeed_Model_Config
      */
     public function set($name, $value)
     {
+        $param = false;
+
+        if (stripos($name, '/')) {
+            list($name, $param) = explode('/', $name);
+        }
+
         if (!isset($this->_config[$name])) {
             throw new Exception("Try to set unknown configuration field - `{$name}`");
         }
 
-        $this->_config[$name] = $value;
+        if ($param !== false) {
+            if (!isset($this->_config[$name][$param])) {
+                throw new Exception("Try to set unknown parameter of configuration field - `{$name}/{$param}`");
+            }
+
+            $this->_config[$name][$param] = $value;
+
+        } else {
+            $this->_config[$name] = $value;
+        }
 
         return $this;
     }
@@ -88,11 +107,7 @@ class Urber_ProductFeed_Model_Config
      */
     public function __get($name)
     {
-        if (isset($this->_config[$name])) {
-            return $this->get($name);
-        }
-
-        throw new Exception("Try to get unknown configuration field - `{$name}`");
+        return $this->get($name);
     }
 
     /**
@@ -103,10 +118,6 @@ class Urber_ProductFeed_Model_Config
      */
     public function __set($name, $value)
     {
-        if (isset($this->_config[$name])) {
-            return $this->set($name, $value);
-        }
-
-        throw new Exception("Try to set unknown configuration field - `{$name}`");
+        return $this->set($name, $value);
     }
 }

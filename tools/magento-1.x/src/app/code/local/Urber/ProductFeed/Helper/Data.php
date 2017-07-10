@@ -2,19 +2,94 @@
 
 class Urber_ProductFeed_Helper_Data extends Mage_Core_Helper_Abstract
 {
+    static $params;
+    static $dimentions;
+
+    function __construct()
+    {
+        $store_id = Mage::app()->getStore()->getStoreId(); 
+        self::$params['color']     = Mage::getStoreConfig('productfeed_config/fields/color', $store_id);
+        self::$params['size']      = Mage::getStoreConfig('productfeed_config/fields/size', $store_id);
+        self::$params['gender']    = Mage::getStoreConfig('productfeed_config/fields/gender', $store_id);
+        self::$params['material']  = Mage::getStoreConfig('productfeed_config/fields/material', $store_id);
+        self::$params['pattern']   = Mage::getStoreConfig('productfeed_config/fields/pattern', $store_id);
+        self::$params['age_group'] = Mage::getStoreConfig('productfeed_config/fields/age_group', $store_id);
+        self::$params['condition'] = Mage::getStoreConfig('productfeed_config/fields/condition', $store_id);
+
+        self::$dimentions['height'] = Mage::getStoreConfig('productfeed_config/fields/dimention_height', $store_id);
+        self::$dimentions['length'] = Mage::getStoreConfig('productfeed_config/fields/dimention_length', $store_id);
+        self::$dimentions['width'] = Mage::getStoreConfig('productfeed_config/fields/dimention_width', $store_id);
+    }
+
+    public function generateFeed()
+    {
+        $validated_products = [];
+        $products_collection = Mage::getModel('catalog/product')->getCollection();
+        foreach ($products_collection as $product) {
+
+            $model = Mage::getModel('catalog/product')->load($product->getId());
+            
+            if ($model->getTypeId() == Mage_Catalog_Model_Product_Type::TYPE_SIMPLE) {
+
+                /**
+                 * item_group_id
+                 */
+                $parent_ids = Mage::getModel('catalog/product_type_configurable')->getParentIdsByChild($product->getId());
+                if(!$parent_ids) {
+                    $parent_ids = Mage::getModel('catalog/product_type_grouped')->getParentIdsByChild($product->getId());
+                }
+                if(isset($parent_ids[0])){
+                    $entities['item_group_id'] = Mage::getModel('catalog/product')->load($parent_ids[0])->getSku();
+                }
+
+                /**
+                 * color, size, gender, material, pattern, age_group, condition
+                 */
+                foreach (self::$params as $index => $param) {
+                    if ($param) {
+                        $attributeValue = $model->getResource()->getAttribute($param)->getFrontend()->getValue($model);
+                        $entities[$index] = $attributeValue;
+                    }
+                }
+
+                $entities['dimensions'] = [
+                    'height'    => [
+                        'value' => (int) self::$dimentions['height'],
+                        'unit'  => ''
+                    ],
+                    'length'    => [
+                        'value' => (int) self::$dimentions['length'],
+                        'unit'  => ''
+                    ],
+                    'width'    => [
+                        'value' => (int) self::$dimentions['width'],
+                        'unit'  => ''
+                    ],
+                    'weight' => [
+                        'value' => (float) $model->getWeigth(),
+                        'unit'  => ''
+                    ],
+                ];
+
+                array_push($validated_products, $entities);
+            }
+            return json_encode($validated_products, JSON_PRETTY_PRINT);
+        }
+        return json_encode($validated_products, JSON_PRETTY_PRINT);
+    }
 	/**
      * Feed generation
      * @return string
      */
-    public static function generateFeed()
+    public function generateFeed_old()
     {
-        $products_collection = Mage::getModel('catalog/product')->getCollection();
-
         /**
          * List of validated products
          * @var array
          */
         $validated_products = [];
+
+        $products_collection = Mage::getModel('catalog/product')->getCollection();
 
         foreach ($products_collection as $product) {
             $model = Mage::getModel('catalog/product')->load($product->getId());
@@ -39,7 +114,7 @@ class Urber_ProductFeed_Helper_Data extends Mage_Core_Helper_Abstract
              * @var array
              */
             $additional_image_links = [];
-            $gallery_images =$model->getMediaGalleryImages();
+            $gallery_images = $model->getMediaGalleryImages();
             foreach($gallery_images as $g_image) {
                 $additional_image_links[] = $g_image['url'];
             }
@@ -56,7 +131,7 @@ class Urber_ProductFeed_Helper_Data extends Mage_Core_Helper_Abstract
                 /**
                  * Non-standard property. Need an example
                  */
-                'gtin'  => '1455582344',
+                'gtin'  => '1455582344', // ean or upc
 
                 /**
                  * Non-standard property. Need an example
@@ -86,19 +161,17 @@ class Urber_ProductFeed_Helper_Data extends Mage_Core_Helper_Abstract
                 ],
 
                 'categories' => $categories,
-                "item_group_id"  => "11",
+                "item_group_id"  => "11", // gropue or for varivative
                 "prices" => [
+                    [
                     "currency" => Mage::app()->getStore()->getCurrentCurrencyCode(),
                     "value" => (float) $model->getPrice(),
-                    /**
-                    * Non-standard property. Need an example
-                    */
-                    "price_effective_date" => "2016-02-24T13 =>00-0800/2016-02-29T15 =>30-0800",
                     "type" => "regular",
-                    "vat" => 10000
+                    ]
                 ],
                 /**
                 * Non-standard property. Need an example
+                * manufacturers
                 */
                 "brands"  => [
                     [
@@ -133,7 +206,6 @@ class Urber_ProductFeed_Helper_Data extends Mage_Core_Helper_Abstract
                     ]
                 ],
                 "size"  => null,
-                "sizeSystem"  => null,
                 "sizeType"  => null,
                 "color"  => "rosa",
                 "gender"  => null,
@@ -148,7 +220,9 @@ class Urber_ProductFeed_Helper_Data extends Mage_Core_Helper_Abstract
             ];
 
             $validated_products[] = $validated_product;
+            $attributes = $parentProduct->getTypeInstance()->getConfigurableAttributes($parentProduct());
+            return json_encode($validated_products);
         }
-        return json_encode($validated_products, JSON_PRETTY_PRINT);
+        return json_encode($validated_products);
     }
 }

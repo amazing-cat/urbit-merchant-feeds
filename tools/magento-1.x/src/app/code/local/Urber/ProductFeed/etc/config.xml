@@ -83,9 +83,20 @@
 			<filter>
 				<category></category>
 				<tag></tag>
-				<manufacturer></manufacturer>
 				<stock>0</stock>
 			</filter>
+			<fields>
+				<dimention_height></dimention_height>
+				<dimention_length></dimention_length>
+				<dimention_width></dimention_width>
+				<ean></ean>
+				<color></color>
+				<gender></gender>
+				<material></material>
+				<pattern></pattern>
+				<age_group></age_group>
+				<condition></condition>
+			</fields>
 		</productfeed_config>
 	</default>
 </config>

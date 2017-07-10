@@ -6,13 +6,17 @@ class Urber_ProductFeed_IndexController extends Mage_Core_Controller_Front_Actio
     {
 	    $this->loadLayout();
 
-	    // TODO: Get filter data from config
+	    /** @var Urber_ProductFeed_Model_Config $config */
         $config = Mage::getModel("productfeed/config");
-	    $filter = array();
 
-        $this->getLayout()->getBlock("xml")->setProductsByFilter($filter);
+        /** @var Urber_ProductFeed_Block_Xml $block */
+        $block = $this->getLayout()->getBlock("xml");
 
-        header('Content-Type: application/json');
+        $block->setProductsByFilter($config->filter);
+
+        $this->getResponse()
+            ->setHeader('Content-Type', 'application/json', true)
+        ;
 
         $this->renderLayout();
     }

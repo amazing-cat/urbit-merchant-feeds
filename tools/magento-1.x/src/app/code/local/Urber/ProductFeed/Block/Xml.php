@@ -1,7 +1,8 @@
-<?php   
+<?php
 
-use Urber_ProductFeed_Helper_Data as Helper;
-
+/**
+ * Class Urber_ProductFeed_Block_Xml
+ */
 class Urber_ProductFeed_Block_Xml extends Mage_Core_Block_Template
 {
     /**
@@ -10,22 +11,19 @@ class Urber_ProductFeed_Block_Xml extends Mage_Core_Block_Template
     protected $_products;
 
     /**
-     * @return string
+     * [getProductsJson description]
+     * @return string [description]
      */
     public function getProductsJson()
     {
-        return $this->showCacheFeed();
-    }
+        /** @var Urber_ProductFeed_Helper_Feed $feedHelper */
+        $feedHelper = Mage::helper("productfeed/feed");
 
-    public function showCacheFeed()
-    {
-        $filename = 'feed';
-        if (!file_exists(Mage::getBaseDir('cache') . DS . $filename)) {
-            file_put_contents(Mage::getBaseDir('cache') . DS . $filename, print_r(Helper::generateFeed(), true));
+        if (!$feedHelper->checkCache()) {
+            $feedHelper->generateFeed($this->_products);
         }
-        $feed = file_get_contents(Mage::getBaseDir('cache') . DS . $filename);
-        echo '<pre>';
-        echo $feed;
+
+        return $feedHelper->getDataJson();
     }
 
     /**

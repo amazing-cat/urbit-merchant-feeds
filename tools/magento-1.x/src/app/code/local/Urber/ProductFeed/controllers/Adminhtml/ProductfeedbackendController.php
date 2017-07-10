@@ -10,8 +10,10 @@ class Urber_ProductFeed_Adminhtml_ProductfeedbackendController extends Mage_Admi
 
 	public function indexAction()
     {
-       $this->loadLayout();
-	   $this->_title($this->__("Urber Product Feed"));
-	   $this->renderLayout();
+        Mage::app()->getResponse()->setRedirect(
+            Mage::helper("adminhtml")->getUrl(
+                "adminhtml/system_config/edit/section/productfeed_config"
+            )
+        );
     }
 }

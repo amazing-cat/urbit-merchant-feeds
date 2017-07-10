@@ -9,12 +9,33 @@ class Urber_ProductFeed_Model_Config_Tag extends Urber_ProductFeed_Model_Config_
      */
     public function toOptionArray()
     {
-        // TODO: implement fetching tags from db
-        return [
-            ['value' => 1, 'label' => 'Tag 1'],
-            ['value' => 2, 'label' => 'Tag 2'],
-            ['value' => 3, 'label' => 'Tag 3'],
-            ['value' => 4, 'label' => 'Tag 4']
-        ];
+        $storeID = Mage::app()->getStore()->getStoreId();
+
+        /** @var Mage_Tag_Model_Resource_Tag_Collection $collection */
+        $collection = Mage::getModel("tag/tag")
+            ->getCollection()
+            ->addFieldToFilter('status', Mage_Tag_Model_Tag::STATUS_APPROVED)
+            ->setOrder('name', Varien_Data_Collection::SORT_ORDER_ASC)
+        ;
+
+        if ($storeID) {
+            $collection->addStoreFilter($storeID);
+        }
+
+        $list = $collection
+            ->load()
+            ->toArray()
+        ;
+
+        $tags = array();
+
+        foreach ($list['items'] as $tag) {
+            $tags[] = array(
+                'value' => $tag['tag_id'],
+                'label' => $tag['name'],
+            );
+        }
+
+        return $tags;
     }
 }
