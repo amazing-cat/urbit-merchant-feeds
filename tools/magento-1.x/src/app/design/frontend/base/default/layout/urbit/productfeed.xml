@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<layout version="0.1.0">
+    <productfeed_index_index>
+        <reference name="root">
+            <action method="setTemplate">
+                <template>urbit/productfeed/layout_empty.phtml</template>
+            </action>
+        </reference>
+        <reference name="content">
+            <block type="productfeed/xml" name="xml" template="urbit/productfeed/index.phtml"/>
+        </reference>
+    </productfeed_index_index>
+</layout>   
+	

@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<layout version="0.1.0">
+    <inventoryfeed_index_index>
+        <reference name="root">
+            <action method="setTemplate">
+                <template>urbit/inventoryfeed/layout_empty.phtml</template>
+            </action>
+        </reference>
+        <reference name="content">
+            <block type="inventoryfeed/xml" name="xml" template="urbit/inventoryfeed/index.phtml"/>
+        </reference>
+    </inventoryfeed_index_index>
+</layout>
+	
