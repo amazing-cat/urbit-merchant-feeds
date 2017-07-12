@@ -13,6 +13,8 @@
  * @property string $description
  * @property string $link
  * @property array  $prices
+ * @property array  $brands
+ * @property array  $attributes
  * @property string $gtin
  * @property array  $categories
  * @property string $image_link
@@ -55,7 +57,7 @@ class Urbit_ProductFeed_Model_Feed_Product
      */
     public function __construct(Mage_Catalog_Model_Product $product)
     {
-        $this->product  = $product;
+        $this->product  = $product->load($product->getId());
         $this->resource = $product->getResource();
     }
 
@@ -158,9 +160,11 @@ class Urbit_ProductFeed_Model_Feed_Product
         $this->description = $product->getDescription();
         $this->link        = $product->getProductUrl();
 
+        $this->processPrices();
         $this->processCategories();
         $this->processImages();
         $this->processVariableProduct();
+        $this->processAttributes();
         $this->processConfigurableFields();
         
         return true;
@@ -174,7 +178,7 @@ class Urbit_ProductFeed_Model_Feed_Product
         $product = $this->product;
 
         // Regular price
-        $this->prices = array(
+        $prices = array(
             array(
                 "currency" => $this->currencyCode,
                 "value"    => number_format($this->product->getPrice(), 2),
@@ -189,7 +193,7 @@ class Urbit_ProductFeed_Model_Feed_Product
             $to    = (new DateTime($product->getSpecialToDate()))->format('c');
             $value = number_format($product->getSpecialPrice(), 2);
 
-            $this->prices[] = array(
+            $prices[] = array(
                 "currency" => $this->currencyCode,
                 "value"    => $value,
                 "type"     => "sale",
@@ -202,12 +206,14 @@ class Urbit_ProductFeed_Model_Feed_Product
         $rule = Mage::getModel('catalogrule/rule')->calcProductPriceRule($product, $product->getPrice());
 
         if ($rule) {
-            $this->prices[] = array(
+            $prices[] = array(
                 "currency" => $this->currencyCode,
                 "value"    => $rule,
                 "type"     => "sale",
             );
         }
+
+        $this->prices = $prices;
     }
 
     /**
@@ -232,14 +238,50 @@ class Urbit_ProductFeed_Model_Feed_Product
 
             $categories[] = [
                 'id'       => (int) $category->getId(),
-                'parentId' => (int) $category->getParentId(),
                 'name'     => $category->getName(),
+                'parentId' => (int) $category->getParentId(),
             ];
+
+            if ($category->getParentId()) {
+                $categories = $this->processParentCategory($categories, $category->getParentId());
+            }
         }
 
         if (!empty($categories)) {
             $this->categories = $categories;
         }
+    }
+
+    /**
+     * get all parent category
+     * @param  array $categories List of found categories
+     * @param  int   $parentId   Id of parent category
+     * @return array             Full list of categories
+     */
+    public function processParentCategory($categories, $parentId)
+    {
+        foreach ($categories as $category) {
+            if ($category['id'] == $parentId) {
+                return $categories;
+            }
+        }
+
+        $parent_category = $this->model('catalog/category', 'load', $parentId);
+
+        $category = [
+            'id'       => (int) $parent_category->getId(),
+            'name'     => $parent_category->getName(),
+        ];
+
+        if ($parent_category->getParentId()) {
+            $category['parentId'] = $parent_category->getParentId();
+            $categories[] = $category;
+            $categories = $this->processParentCategory($categories, $parent_category->getParentId());
+        } else {
+            $categories[] = $category;
+        }
+
+        return $categories;
     }
 
     /**
@@ -284,21 +326,26 @@ class Urbit_ProductFeed_Model_Feed_Product
 
         $fields = $this->model("productfeed/config", 'get', 'fields');
 
-        // TODO: need mpn
+        $brand = $this->getAttributeValue($fields['brands']);
 
-        $ean = $this->attr($fields['ean']);
-
-        if ($ean) {
-            $this->gtin = $ean;
+        if ($brand && $brand !== 'No') {
+            $this->brands = array(
+                array(
+                    'name' => $brand,
+                ),
+            );
         }
 
-        // TODO: need unit for weigh
-        $this->dimensions = array(
-            'weight' => array(
-                'value' => (float) $this->product->getWeigth(),
-                'unit'  => ''
-            ),
-        );
+        $dimensions = array();
+        
+        $weight = (float) $this->product->getWeigth();
+        
+        if ($weight > 0) {
+            $dimensions['weight'] =  array(
+                'value' => $weight,
+                'unit'  => $this->getAttributeValue($fields['weight_unit'])
+            );
+        }
 
         foreach (array('height', 'length', 'width') as $key) {
             $keyField = "dimention_{$key}";
@@ -307,31 +354,123 @@ class Urbit_ProductFeed_Model_Feed_Product
                 continue;
             }
 
-            $attr = $this->attr($fields[$keyField]);
+            $attr = $this->getAttributeValue($fields[$keyField]);
 
-            if (!$attr) {
+            if (!$attr || $attr <= 0) {
                 continue;
             }
 
-            // TODO: dimensions unit value
-            $this->dimensions[$key] = array(
-                'value' => (int) $attr,
-                'unit'  => '',
+            $dimensions[$key] = array(
+                'value' => (float) $attr,
+                'unit'  => $this->getAttributeValue($fields['dimention_unit']),
             );
         }
 
-        foreach (array("sizeType", "size", "color", "gender", "material", "pattern", "age_group", "condition") as $key) {
+        if (!empty($dimensions)) {
+            $this->dimensions = $dimensions;
+        }
+
+        foreach (array("ean", "mpn", "sizeType", "size", "color", "gender", "material", "pattern", "age_group", "condition") as $key) {
             if (!isset($fields[$key]) || !$fields[$key]) {
                 continue;
             }
 
-            $attr = $this->attr($fields[$key]);
+            $attr = $this->getAttributeValue($fields[$key]);
 
             if ($attr === null) {
                 continue;
             }
 
             $this->{$key} = $attr;
+        }
+    }
+
+    /**
+     * Process product attributes
+     */
+    protected function processAttributes()
+    {
+        $fields = $this->model("productfeed/config", 'getSelect', 'fields/attributes');
+
+        $product = $this->product;
+        $attributes = array();
+
+
+        /** @var Mage_Catalog_Model_Resource_Eav_Attribute $attr */
+        foreach ($product->getAttributes() as $k => $attr) {
+            $code  = $attr->getAttributeCode();
+            $type  = $attr->getBackendType();
+            $value = $this->getAttributeValue($code);
+
+            if (!in_array($code, $fields) || $value === null) {
+                continue;
+            }
+
+            if ($type === 'int' && in_array(strtolower($value), array('yes', 'no'))) {
+                continue;
+            }
+
+            switch ($type) {
+            // String
+                case 'varchar':
+                    $type = 'string';
+                case 'url':
+                case 'text':
+                case 'string':
+                    if ($value === 'no_selection') {
+                        // Skip attribute and continue foreach
+                        continue 2;
+                    }
+
+                    if (preg_match("#^[a-zA-Z]://#", $value)) {
+                        $type = 'url';
+                    }
+
+                    $value = (string) $value;
+                    break;
+            // Integer
+                case 'int':
+                    $type = 'number';
+                case 'number':
+                    $value = (int) $value;
+                    break;
+            // Float
+                case 'price':
+                case 'decimal':
+                    $type = 'float';
+                case 'float':
+                    $value = (float) $value;
+                    break;
+            // Boolean
+                case 'bool':
+                    $type = 'boolean';
+                case 'boolean':
+                    $value = !!$value;
+                    break;
+            // Date/Time
+                case 'datetime':
+                    $type = 'time';
+                case 'time':
+                    $value = date('c', strtotime($value));
+                    break;
+            // Skip attribute and continue foreach
+                case 'static':
+                default:
+                    continue 2;
+            }
+
+            // TODO: implement attribute unit
+            $attributes[] = array(
+                'name'  => $code,
+                'type'  => $type,
+                //'unit'  => null,
+                'value' => $value,
+            );
+        }
+
+
+        if (!empty($attributes)) {
+            $this->attributes = $attributes;
         }
     }
 
@@ -369,13 +508,24 @@ class Urbit_ProductFeed_Model_Feed_Product
 
     /**
      * Helper function
+     * Get product attribute object
+     * @param string $name
+     * @return Mage_Eav_Model_Entity_Attribute_Abstract
+     */
+    protected function getAttribute($name)
+    {
+        return $this->resource->getAttribute($name);
+    }
+
+    /**
+     * Helper function
      * Get product attribute value
      * @param string $name
      * @return mixed
      */
-    protected function attr($name)
+    protected function getAttributeValue($name)
     {
-        $attr = $this->resource->getAttribute($name);
+        $attr = $this->getAttribute($name);
 
         if (!$attr) {
             return null;

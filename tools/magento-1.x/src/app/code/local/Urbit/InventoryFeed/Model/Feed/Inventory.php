@@ -36,7 +36,7 @@ class Urbit_InventoryFeed_Model_Feed_Inventory
      */
     public function __construct(Mage_Catalog_Model_Product $product)
     {
-        $this->product = $product;
+        $this->product  = $product->load($product->getId());
         $this->resource = $product->getResource();
     }
 
@@ -153,7 +153,7 @@ class Urbit_InventoryFeed_Model_Feed_Inventory
         $product = $this->product;
 
         // Regular price
-        $this->prices = array(
+        $prices = array(
             array(
                 "currency" => $this->currencyCode,
                 "value"    => number_format($this->product->getPrice(), 2),
@@ -168,7 +168,7 @@ class Urbit_InventoryFeed_Model_Feed_Inventory
             $to    = (new DateTime($product->getSpecialToDate()))->format('c');
             $value = number_format($product->getSpecialPrice(), 2);
 
-            $this->prices[] = array(
+            $prices[] = array(
                 "currency" => $this->currencyCode,
                 "value"    => $value,
                 "type"     => "sale",
@@ -181,12 +181,14 @@ class Urbit_InventoryFeed_Model_Feed_Inventory
         $rule = Mage::getModel('catalogrule/rule')->calcProductPriceRule($product, $product->getPrice());
 
         if ($rule) {
-            $this->prices[] = array(
+            $prices[] = array(
                 "currency" => $this->currencyCode,
                 "value"    => $rule,
                 "type"     => "sale",
             );
         }
+
+        $this->prices = $prices;
     }
 
     /**
@@ -194,12 +196,13 @@ class Urbit_InventoryFeed_Model_Feed_Inventory
      */
     protected function processInventory()
     {
-        // TODO: implement inventory fetching
         $inventory = array();
 
+        $stockItem = Mage::getModel('cataloginventory/stock_item')->loadByProduct($this->product);
+
         $inventory[] = array(
-            'location' => "1", // Location of current stock
-            'quantity' => 5,   // Currently stocked items for location
+            'location' => (int) $stockItem->getStockId(), // Location of current stock
+            'quantity' => (int) $stockItem->getQty(),   // Currently stocked items for location
         );
 
         $this->inventory = $inventory;

@@ -57,16 +57,39 @@ class Urbit_InventoryFeed_Model_List_Product implements IteratorAggregate
 
             $filter = $this->getFilter();
 
+            /**
+             * Category filter
+             */
             if ($filter['category'] && !empty($filter['category'])) {
-                // TODO: set category filter
+                $this->_products
+                    ->joinField('category_id', 'catalog/category_product', 'category_id', 'product_id=entity_id', null, 'left')
+                    ->addAttributeToFilter('category_id', array('in' => explode(',',$filter['category'])));
+                $this->_products->getSelect()->group('e.entity_id');
             }
 
+            /**
+             * Tag filter
+             */
             if ($filter['tag'] && !empty($filter['tag'])) {
-                // TODO: set tag filter
+                $tagged_ids = [];
+                foreach (explode(',',$filter['tag']) as $tag) {
+                    $tag_id = Mage::getModel('tag/tag')->load($tag)->getId();
+                    $tagged_products = Mage::getResourceModel('tag/product_collection')->addTagFilter($tag_id);
+                    foreach($tagged_products as $tagged_product){
+                        array_push($tagged_ids, $tagged_product->getId());
+                    }
+                }
+                $this->_products->addAttributeToFilter('entity_id', array('in' => $tagged_ids));
             }
 
+            /**
+             * minimal stock filter
+             */
             if ($filter['stock'] && $filter['stock'] > 0) {
-                // TODO: set minimal stock filter
+                $this->_products
+                    ->joinField('qty', 'cataloginventory/stock_item', 'qty', 'product_id=entity_id', '{{table}}.stock_id=1', 'left')
+                    ->addAttributeToFilter('qty', array('gt' => $filter['stock']));
+                $this->_products->getSelect()->group('e.entity_id');
             }
         }
 

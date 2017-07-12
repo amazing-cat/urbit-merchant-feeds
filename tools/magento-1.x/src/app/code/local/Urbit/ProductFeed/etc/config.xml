@@ -82,7 +82,7 @@
 	<default>
 		<productfeed_config>
 			<cron>
-				<cache_duration>3600</cache_duration>
+				<cache_duration>1</cache_duration>
 			</cron>
 			<filter>
 				<category></category>
@@ -93,13 +93,19 @@
 				<dimention_height></dimention_height>
 				<dimention_length></dimention_length>
 				<dimention_width></dimention_width>
+				<dimention_unit></dimention_unit>
+				<weight_unit></weight_unit>
 				<ean></ean>
+				<mpn></mpn>
 				<color></color>
 				<gender></gender>
 				<material></material>
 				<pattern></pattern>
 				<age_group></age_group>
 				<condition></condition>
+				<sizeType></sizeType>
+				<brands></brands>
+				<attributes></attributes>
 			</fields>
 		</productfeed_config>
 	</default>

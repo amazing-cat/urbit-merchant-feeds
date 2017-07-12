@@ -59,6 +59,7 @@
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
+                            <can_be_empty>1</can_be_empty>
                             <comment></comment>
                         </category>
                         <tag>
@@ -69,6 +70,7 @@
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
+                            <can_be_empty>1</can_be_empty>
                             <comment></comment>
                         </tag>
                         <stock>
@@ -130,6 +132,34 @@
                             <show_in_store>1</show_in_store>
                         </dimention_width>
 
+                        <!-- Dimention units -->
+                        <units translate="label">
+                            <label>Units</label>
+                            <frontend_model>adminhtml/system_config_form_field_heading</frontend_model>
+                            <sort_order>14</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </units>
+                        <dimention_unit>
+                            <label>Dimention unit</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>productfeed/config_attribute</source_model>
+                            <sort_order>15</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </dimention_unit>
+                        <weight_unit>
+                            <label>Weight unit</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>productfeed/config_attribute</source_model>
+                            <sort_order>16</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </weight_unit>
+
                         <!-- Inventory -->
 
                         <inventory_label>
@@ -149,6 +179,16 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </ean>
+                        <mpn>
+                            <label>MPN</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>productfeed/config_attribute</source_model>
+                            <sort_order>22</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment>Manufacturer Product Number/Code</comment>
+                        </mpn>
 
                         <!-- Parameters -->
 
@@ -223,6 +263,45 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </condition>
+                        <sizeType>
+                            <label>Size Type</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>productfeed/config_attribute</source_model>
+                            <sort_order>38</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </sizeType>
+                        <brands>
+                            <label>Brands</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>productfeed/config_attribute</source_model>
+                            <sort_order>39</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </brands>
+
+                        <!-- Additional attributes -->
+
+                        <attributes_label>
+                            <label>Additional attributes</label>
+                            <frontend_model>adminhtml/system_config_form_field_heading</frontend_model>
+                            <sort_order>40</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </attributes_label>
+                        <attributes>
+                            <label>Additional product attributes to show in feed</label>
+                            <frontend_type>multiselect</frontend_type>
+                            <source_model>productfeed/config_attribute</source_model>
+                            <sort_order>41</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment>in "attribute" feed field</comment>
+                        </attributes>
                     </fields>
                 </fields>
             </groups>

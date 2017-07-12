@@ -82,7 +82,7 @@
 	<default>
 		<inventoryfeed_config>
 			<cron>
-				<cache_duration>3600</cache_duration>
+				<cache_duration>15</cache_duration>
 			</cron>
 			<filter>
 				<category></category>

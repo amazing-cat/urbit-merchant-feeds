@@ -6,28 +6,49 @@
 class Urbit_InventoryFeed_IndexController extends Mage_Core_Controller_Front_Action
 {
     /**
+     * @var Urbit_InventoryFeed_Model_List_Product
+     */
+    protected $_products;
+
+    /**
      * Index action for plugin frontend
      * Show product feed in json format
      */
     public function IndexAction()
     {
-	    $this->loadLayout();
-
 	    /** @var Urbit_InventoryFeed_Model_Config $config */
         $config = Mage::getModel("inventoryfeed/config");
 
-        // Additional time for feed cache to prevent conflict with feed generation cron task
+        /**
+         * Additional time for feed cache to prevent conflict with feed generation cron task
+         */
         $config->set("cron/cache_duration", $config->cron["cache_duration"] + 10);
 
-        /** @var Urbit_InventoryFeed_Block_Xml $block */
-        $block = $this->getLayout()->getBlock("xml");
-
-        $block->setProductsByFilter($config->filter);
+        /**
+         * @var UrbitInventoryFeed_Model_List_Product
+         */
+        $this->_products = Mage::getModel("inventoryfeed/list_product", $config->filter);
 
         $this->getResponse()
+            ->clearHeaders()
             ->setHeader('Content-Type', 'application/json', true)
+            ->setBody($this->getProductsJson());
         ;
+    }
 
-        $this->renderLayout();
+    /**
+     * Return json feed data
+     * @return string
+     */
+    public function getProductsJson()
+    {
+        /** @var Urbit_InventoryFeed_Helper_Feed $feedHelper */
+        $feedHelper = Mage::helper("inventoryfeed/feed");
+
+        if (!$feedHelper->checkCache()) {
+            $feedHelper->generateFeed($this->_products);
+        }
+
+        return $feedHelper->getDataJson();
     }
 }

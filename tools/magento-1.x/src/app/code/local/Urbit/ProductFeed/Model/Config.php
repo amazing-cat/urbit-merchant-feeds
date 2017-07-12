@@ -6,6 +6,7 @@
  * @property array $cron
  * @property array $filter
  * @property array $fields
+ * @property array $attributes
  */
 class Urbit_ProductFeed_Model_Config
 {
@@ -59,6 +60,23 @@ class Urbit_ProductFeed_Model_Config
         }
 
         return self::$_config[$name];
+    }
+
+    /**
+     * Get parameter of multiselect config field
+     * @param string $name
+     * @return array
+     * @throws Exception
+     */
+    public function getSelect($name)
+    {
+        $val = $this->get($name);
+
+        if (is_array($val)) {
+            return $val;
+        }
+
+        return explode(",", $val);
     }
 
     /**

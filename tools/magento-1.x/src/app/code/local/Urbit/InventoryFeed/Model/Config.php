@@ -62,6 +62,23 @@ class Urbit_InventoryFeed_Model_Config
     }
 
     /**
+     * Get parameter of multiselect config field
+     * @param string $name
+     * @return array
+     * @throws Exception
+     */
+    public function getSelect($name)
+    {
+        $val = $this->get($name);
+
+        if (is_array($val)) {
+            return $val;
+        }
+
+        return explode(",", $val);
+    }
+
+    /**
      * @param string $name
      * @param mixed $value
      * @return mixed

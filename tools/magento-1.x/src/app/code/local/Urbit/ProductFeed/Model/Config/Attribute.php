@@ -11,8 +11,6 @@ class Urbit_ProductFeed_Model_Config_Attribute extends Urbit_ProductFeed_Model_C
      */
     public function toOptionArray()
     {
-        $storeID = Mage::app()->getStore()->getStoreId();
-
         /** @var Mage_Catalog_Model_Resource_Product_Attribute_Collection $collection */
         $collection = Mage::getResourceModel('catalog/product_attribute_collection')
             ->addFieldToSelect("*")
@@ -33,6 +31,10 @@ class Urbit_ProductFeed_Model_Config_Attribute extends Urbit_ProductFeed_Model_C
         );
 
         foreach ($list['items'] as $attr) {
+            if (!$attr['is_user_defined']) {
+                continue;
+            }
+
             $hasLabel = strlen(trim($attr['frontend_label']));
 
             if ($hasLabel) {
