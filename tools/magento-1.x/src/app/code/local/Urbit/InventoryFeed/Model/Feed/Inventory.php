@@ -139,8 +139,13 @@ class Urbit_InventoryFeed_Model_Feed_Inventory
 
         $this->id = (string)$product->getId();
 
+        $positive_quantity = $this->processInventory();
+
+        if (!$positive_quantity) {
+            return false;
+        }
+
         $this->processPrices();
-        $this->processInventory();
 
         return true;
     }
@@ -196,16 +201,24 @@ class Urbit_InventoryFeed_Model_Feed_Inventory
      */
     protected function processInventory()
     {
-        $inventory = array();
-
         $stockItem = Mage::getModel('cataloginventory/stock_item')->loadByProduct($this->product);
+
+        $quantity = (int) $stockItem->getQty();
+
+        if ($quantity <= 0) {
+            return false;
+        }
+
+        $inventory = array();
 
         $inventory[] = array(
             'location' => (int) $stockItem->getStockId(), // Location of current stock
-            'quantity' => (int) $stockItem->getQty(),   // Currently stocked items for location
+            'quantity' => $quantity,   // Currently stocked items for location
         );
 
         $this->inventory = $inventory;
+
+        return true;
     }
 
     /**

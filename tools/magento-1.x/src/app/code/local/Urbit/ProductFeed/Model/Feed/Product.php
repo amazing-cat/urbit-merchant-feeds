@@ -273,7 +273,7 @@ class Urbit_ProductFeed_Model_Feed_Product
             'name'     => $parent_category->getName(),
         ];
 
-        if ($parent_category->getParentId()) {
+        if ($parent_category->getParentId() !== 0) {
             $category['parentId'] = $parent_category->getParentId();
             $categories[] = $category;
             $categories = $this->processParentCategory($categories, $parent_category->getParentId());
