@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<config>
+    <tabs>
+        <urbit translate="label"  module="inventoryfeed">
+            <label>Urbit</label>
+            <sort_order>200</sort_order>
+        </urbit>
+    </tabs>
+
+    <!-- Plugin config page fields -->
+
+    <sections>
+        <inventoryfeed_config translate="label" module="inventoryfeed">
+            <label>Inventory Feed</label>
+            <tab>urbit</tab>
+            <frontend_type>text</frontend_type>
+            <sort_order>200</sort_order>
+            <show_in_default>1</show_in_default>
+            <show_in_website>1</show_in_website>
+            <show_in_store>1</show_in_store>
+            <groups>
+                <!-- Cache -->
+
+                <cron translate="label">
+                    <label>Feed Cache</label>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>1</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <fields>
+                        <cache_duration>
+                            <label>Cache duration</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>1</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment>Cache live time (in minutes)</comment>
+                        </cache_duration>
+                    </fields>
+                </cron>
+
+                <!-- Feed Data Filter -->
+
+                <filter translate="label">
+                    <label>Inventory Filter</label>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>2</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <fields>
+                        <category>
+                            <label>Categories</label>
+                            <frontend_type>multiselect</frontend_type>
+                            <source_model>inventoryfeed/config_category</source_model>
+                            <sort_order>1</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment></comment>
+                        </category>
+                        <tag>
+                            <label>Tags</label>
+                            <frontend_type>multiselect</frontend_type>
+                            <source_model>inventoryfeed/config_tag</source_model>
+                            <sort_order>2</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment></comment>
+                        </tag>
+                    </fields>
+                </filter>
+
+                <!-- Associate feed fields with inventory attributes -->
+
+                <fields>
+                    <label>Inventory Fields</label>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>3</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <fields>
+                    </fields>
+                </fields>
+            </groups>
+        </inventoryfeed_config>
+    </sections>
+</config>
