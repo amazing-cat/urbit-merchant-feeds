@@ -1,0 +1,118 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <tab id="urbit" translate="label" sortOrder="200">
+            <label>Urbit</label>
+        </tab>
+        <section id="productfeed_config" translate="label" sortOrder="130" showInDefault="1" showInWebsite="1" showInStore="1">
+            <class>separator-top</class>
+            <label>Product Fields</label>
+            <tab>urbit</tab>
+            <resource>Urbit_ProductFeed::config</resource>
+            <group id="cron" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Feed Cache</label>
+                <field id="cache_duration" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Cache duration</label>
+                </field>
+            </group>
+            <group id="filter" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Product Filter</label>
+                <field id="category" translate="label" type="multiselect" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Categories</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\Category</source_model>
+                </field>
+                <field id="stock" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Minimal Stock</label>
+                </field>
+                <field id="tag_name" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>"Tag" Attribute Name</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+                <field id="tag_value" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>"Tag" Attribute Value</label>
+                </field>
+            </group>
+            <group id="fields" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Dimensions Attributes</label>
+                <field id="height" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Height</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+                <field id="length" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Length</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+                <field id="width" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Width</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+            </group>
+            <group id="units" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Units</label>
+                <field id="dimension" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Dimension unit</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+                <field id="weight" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Weight unit</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+            </group>
+            <group id="inventory" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Inventory Attributes</label>
+                <field id="ean" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>EAN/UPC code</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+                <field id="mpn" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>MPN code</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+            </group>
+            <group id="attributes" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Product Attributes</label>
+                <field id="color" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Color</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+                <field id="size" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Size</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+                <field id="size_type" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Size Type</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+                <field id="gender" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Gender</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+                <field id="material" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Material</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+                <field id="pattern" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Pattern</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+                <field id="age_group" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Age Group</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+                <field id="condition" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Condition</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+                <field id="brands" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Brands / Manufacturers</label>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+                <field id="additional" translate="label" type="multiselect" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Additional attributes</label>
+                    <comment>Additional product attributes to show in feed</comment>
+                    <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>
