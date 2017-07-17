@@ -2,10 +2,21 @@
 
 namespace Urbit\ProductFeed\Model\Feed;
 
+use Magento\Directory\Model\Currency;
+use Magento\Framework\UrlInterface;
+use Magento\Store\Api\Data\StoreInterface as Store;
 use Magento\Store\Model\StoreManagerInterface;
-use Magento\Catalog\Model\Product\Interceptor as MagentoProduct;
-use Exception;
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\ResourceModel\Category\Collection as CategoryCollection;
+use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
+use Magento\Catalog\Helper\Image;
+use Magento\Catalog\Model\Product as MagentoProduct;
+use Magento\ConfigurableProduct\Model\Product\Type\ConfigurableFactory as MagentoProductConfigurableFactory;
+use Magento\Catalog\Api\ProductRepositoryInterface as ProductRepository;
+use Magento\Catalog\Model\Product\Type\AbstractType as ProductType;
+use Magento\Catalog\Model\Product\Type\Simple as ProductTypeSimple;
 
+use Exception;
 
 /**
  * Class FeedProduct
@@ -48,6 +59,13 @@ class FeedProduct
     protected $_product;
 
     /**
+     * Factory of configurable products.
+     * Used for fetching parent product / item group id
+     * @var MagentoProductConfigurableFactory
+     */
+    protected $_configurableFactory;
+
+    /**
      * Magento product resource object
      * @var
      */
@@ -65,16 +83,45 @@ class FeedProduct
     protected $_store;
 
     /**
+     * @var CategoryCollection
+     */
+    protected $_categoryCollectionFactory;
+
+    /**
+     * @var Image
+     */
+    protected $_imageHelper;
+
+    /**
+     * @var Currency
+     */
+    protected $_currency;
+
+    /**
      * FeedProduct constructor.
      * @param MagentoProduct $product
+     * @param MagentoProductConfigurableFactory $configurableFactory
+     * @param ProductRepository $productRepository
      * @param StoreManagerInterface $store
+     * @param CategoryCollectionFactory $categoryCollectionFactory
+     * @param Image $imageHelper
+     * @param Currency $currency
      */
     public function __construct(
         MagentoProduct $product,
-        StoreManagerInterface $store
+        MagentoProductConfigurableFactory $configurableFactory,
+        ProductRepository $productRepository,
+        StoreManagerInterface $store,
+        CategoryCollectionFactory $categoryCollectionFactory,
+        Image $imageHelper,
+        Currency $currency
     ) {
-        $this->_product = $product;
-        $this->_store = $store;
+        $this->_product  = $productRepository->getById($product->getId());
+        $this->_store    = $store;
+        $this->_currency = $currency;
+        $this->_configurableFactory = $configurableFactory;
+        $this->_categoryCollectionFactory = $categoryCollectionFactory;
+        $this->_imageHelper = $imageHelper;
     }
 
     /**
@@ -121,7 +168,6 @@ class FeedProduct
      */
     public function __set($name, $value)
     {
-
         $setMethod = "set{$name}";
 
         if (method_exists($this, $setMethod)) {
@@ -168,7 +214,6 @@ class FeedProduct
      */
     public function process()
     {
-        // TODO: Add checking product on "simple" type
         if (!$this->isSimple()) {
             return false;
         }
@@ -187,7 +232,6 @@ class FeedProduct
         $this->processAttributes();
         $this->processConfigurableFields();
 
-
         return true;
     }
 
@@ -196,29 +240,106 @@ class FeedProduct
      */
     protected function processPrices()
     {
-        // TODO: Process regular prices
-        // TODO: Process discount prices
-        // TODO: Process special price rules
+        $prices    = [];
+        $product   = $this->_product;
+        $currency  = $this->_getCurrency();
+        $priceInfo = $product->getPriceInfo();
 
-        $this->prices = [];
+        $regularPrice = $priceInfo->getPrice('regular_price');
+        $finalPrice = $priceInfo->getPrice('final_price');
+
+        $regularPriceValue = $regularPrice->getValue();
+        $finalPriceValue = $finalPrice->getValue();
+
+        if ($regularPriceValue) {
+            $prices[] = [
+                "currency" => $currency,
+                "value"    => number_format($regularPriceValue, 2),
+                "type"     => "regular",
+            ];
+        }
+
+        if ($finalPriceValue && $finalPriceValue !== $regularPriceValue) {
+            $prices[] = [
+                "currency" => $currency,
+                "value"    => number_format($finalPriceValue, 2),
+                "type"     => "special",
+            ];
+        }
+
+        $this->prices = $prices;
     }
     /**
      * Process product categories
      */
     protected function processCategories()
     {
-        // TODO: process product categories
+        $categoryIds =  $this->_product->getCategoryIds();
+
+        /** @var CategoryCollection $categoryCollection */
+        $categoryCollection = $this->_categoryCollectionFactory->create()
+            ->addAttributeToSelect('*')
+            ->addAttributeToFilter('entity_id', $categoryIds)
+        ;
+
+        $productCategories = [];
+
+        /** @var Category $category */
+        foreach ($categoryCollection as $category) {
+            $productCategories[] = [
+                'id'       => (int) $category->getId(),
+                'name'     => $category->getName(),
+                'parentId' => (int) $category->getParentId(),
+            ];
+
+            $this->processParentCategory($category, $productCategories);
+        }
+
+        if (!empty($productCategories)) {
+            $this->categories = $productCategories;
+        }
     }
 
     /**
      * get all parent category
+     * @param  Category $category Category to process
      * @param  array $categories List of found categories
-     * @param  int   $parentId   Id of parent category
-     * @return array             Full list of categories
      */
-    public function processParentCategory($categories, $parentId)
+    public function processParentCategory($category, &$categories)
     {
-        // TODO: get product parent categories
+        $parentId = (int) $category->getParentId();
+
+        if (!$parentId) {
+            return;
+        }
+
+        foreach ($categories as $cat) {
+            if ($cat['id'] == $parentId) {
+                return;
+            }
+        }
+
+        /** @var CategoryCollection $categoryCollection */
+        $collection = $this->_categoryCollectionFactory->create()
+            ->addAttributeToSelect('*')
+            ->addAttributeToFilter('entity_id', $parentId)
+        ;
+
+        /** @var Category $parentCategory */
+        $parentCategory = $collection->getFirstItem();
+
+        $newCategory = [
+            'id'   => (int) $parentCategory->getId(),
+            'name' => $parentCategory->getName(),
+        ];
+
+        if ((int) $parentCategory->getParentId()) {
+            $newCategory['parentId'] = $parentCategory->getParentId();
+            $categories[] = $newCategory;
+            $this->processParentCategory($parentCategory, $categories);
+        } else {
+            $categories[] = $newCategory;
+        }
     }
 
     /**
@@ -226,7 +347,32 @@ class FeedProduct
      */
     protected function processImages()
     {
-        // TODO: Get product images
+        $product = $this->_product;
+
+        if ($product->getImage()) {
+            $mainImage = $this->_getStore()->getBaseUrl(UrlInterface::URL_TYPE_MEDIA)
+                . 'catalog/product'
+                . $this->_product->getImage()
+            ;
+
+            $this->image_link = $mainImage;
+        }
+
+        if ($images = $this->_product->getMediaGalleryImages()) {
+            $additional = [];
+
+            foreach ($images as $image) {
+                if ($this->image_link === $image['url']) {
+                    continue;
+                }
+
+                $additional[] = $image['url'];
+            }
+
+            if (!empty($additional)) {
+                $this->additional_image_links = $additional;
+            }
+        }
     }
 
     /**
@@ -234,7 +380,14 @@ class FeedProduct
      */
     protected function processVariableProduct()
     {
-        // TODO: Get feed "item_group_id" property if product is part of Variable product
+        $parentIDs = $this->_configurableFactory
+            ->create()
+            ->getParentIdsByChild($this->_product->getId())
+        ;
+
+        if (!empty($parentIDs)) {
+            $this->item_group_id = array_shift($parentIDs);
+        }
     }
 
     /**
@@ -259,7 +412,27 @@ class FeedProduct
      */
     public function isSimple()
     {
-        // TODO: Add checking product on "simple" type
-        return true;
+        /** @var ProductType $type */
+        $type = $this->_product->getTypeInstance();
+
+        return $type instanceof ProductTypeSimple;
+    }
+
+    /**
+     * @return Store
+     */
+    protected function _getStore()
+    {
+        return $this->_store->getStore();
+    }
+
+    /**
+     * Helper function
+     * Get store currency
+     * @return string
+     */
+    protected function _getCurrency()
+    {
+        return $this->_getStore()->getCurrentCurrencyCode();
     }
 }

@@ -2,9 +2,16 @@
 
 namespace Urbit\ProductFeed\Model\Feed;
 
+use Magento\Framework\Locale\Resolver as LocaleResolver;
+use Magento\Store\Api\Data\StoreInterface as MagentoStore;
+use Magento\Framework\App\Config\ScopeConfigInterface as MagentoConfig;
+use Magento\Directory\Api\CountryInformationAcquirerInterface as MagentoCountryInformation;
+use Magento\Catalog\Api\ProductRepositoryInterface as ProductRepository;
 use Urbit\ProductFeed\Model\Collection\Product as ProductCollection;
 use Urbit\ProductFeed\Model\Config\Config;
 use Urbit\ProductFeed\Model\Config\ConfigFactory;
+
+use Magento\Framework\Exception\NoSuchEntityException;
 
 /**
  * Class Feed
@@ -40,6 +47,31 @@ class Feed
     protected $_feedProductFactory;
 
     /**
+     * @var MagentoStore
+     */
+    protected $_store;
+
+    /**
+     * @var LocaleResolver
+     */
+    protected $_locale;
+
+    /**
+     * @var MagentoConfig
+     */
+    protected $_scopeConfig;
+
+    /**
+     * @var MagentoCountryInformation
+     */
+    protected $_countryInformation;
+
+    /**
+     * @var ProductRepository
+     */
+    protected $_productRepository;
+
+    /**
      * @var array
      */
     protected $_data = [];
@@ -49,15 +81,31 @@ class Feed
      * @param ProductCollection $products
      * @param ConfigFactory $configFactory
      * @param FeedProductFactory $feedProductFactory
+     * @param MagentoStore $store
+     * @param LocaleResolver $locale
+     * @param MagentoConfig $scopeConfig
+     * @param MagentoCountryInformation $countryInformation
+     * @param ProductRepository $productRepository
      */
     public function __construct(
         ProductCollection $products,
         ConfigFactory $configFactory,
-        FeedProductFactory $feedProductFactory
+        FeedProductFactory $feedProductFactory,
+        MagentoStore $store,
+        LocaleResolver $locale,
+        MagentoConfig $scopeConfig,
+        MagentoCountryInformation $countryInformation,
+        ProductRepository $productRepository
     ) {
         $this->_products = $products;
         $this->_config   = $configFactory->create();
+        $this->_store    = $store;
+        $this->_locale   = $locale;
+        $this->_scopeConfig = $scopeConfig;
+        $this->_countryInformation = $countryInformation;
         $this->_feedProductFactory = $feedProductFactory;
+        $this->_productRepository  = $productRepository;
+
     }
 
     /**
@@ -68,6 +116,8 @@ class Feed
         $products = [];
 
         foreach ($this->_products as $product) {
+            //$product = $this->_productRepository->getById($product->getId());
+
             $feedProduct = $this->_feedProductFactory->create([
                 'product' => $product,
             ]);
@@ -90,8 +140,16 @@ class Feed
             $this->process();
         }
 
-        // TODO: get current store lang
-        $lang = 'en';
+        $lang = $this->_locale->getLocale();
+        $countryCode = null;
+
+        try {
+            $countryID = $this->_scopeConfig->getValue('general/store_information/country_id');
+            $country = $this->_countryInformation->getCountryInfo($countryID);
+            $countryCode = $country->getTwoLetterAbbreviation() ?: $lang;
+        } catch (NoSuchEntityException $e) {
+            $countryCode = $lang;
+        }
 
         $version = $this->getFeedVersion();
 
@@ -101,7 +159,7 @@ class Feed
             'attribute_language' => $lang,
             'content_type' => 'products',
             'target_country' => array(
-                $lang,
+                $countryCode,
             ),
             'version' => $version,
             'feed_format' => array(

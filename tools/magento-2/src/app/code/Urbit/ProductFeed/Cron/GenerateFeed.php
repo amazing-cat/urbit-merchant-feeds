@@ -2,41 +2,91 @@
 
 namespace Urbit\ProductFeed\Cron;
 
-use \Psr\Log\LoggerInterface;
+use Magento\Store\Model\StoreManagerInterface as StoreManager;
+use Magento\Store\Model\Store;
+use Urbit\ProductFeed\Model\Collection\Product as ProductCollection;
+use Urbit\ProductFeed\Model\Collection\ProductFactory as ProductCollectionFactory;
+use Urbit\ProductFeed\Model\Config\Config;
+use Urbit\ProductFeed\Model\Config\ConfigFactory;
+use Urbit\ProductFeed\Helper\Feed as FeedHelper;
 
 /**
+ * Class GenerateFeed
+ * @package Urbit\ProductFeed\Helper
+ *
  * Command to execute
- * php ../bin/magento cron:run --group="urbit_crongroup"
+ * php bin/magento cron:run --group="urbit_crongroup"
  */
-class GenerateFeed {
+class GenerateFeed
+{
+    /**
+     * @var Config
+     */
+    protected $_config;
 
+    /**
+     * @var ProductCollectionFactory
+     */
+    protected $_productCollectionFactory;
 
-    protected $logger;
+    /**
+     * @var FeedHelper
+     */
+    protected $_helper;
 
-    public function __construct(LoggerInterface $logger) {
-        $this->logger = $logger;
+    /**
+     * @var StoreManager
+     */
+    protected $_storeManager;
+
+    /**
+     * GenerateFeed constructor.
+     * @param ProductCollectionFactory $productCollectionFactory
+     * @param ConfigFactory $configFactory
+     * @param FeedHelper $helper
+     * @param StoreManager $storeManager
+     */
+    public function __construct(
+        ProductCollectionFactory $productCollectionFactory,
+        ConfigFactory $configFactory,
+        FeedHelper $helper,
+        StoreManager $storeManager
+    ) {
+        $this->_helper = $helper;
+        $this->_config = $configFactory->create();
+        $this->_storeManager = $storeManager;
+        $this->_productCollectionFactory = $productCollectionFactory;
     }
 
-  /**
-   * Write to system.log
-   *
-   * @return void
-   */
+    /**
+     * Run feeds generation for all stores
+     */
+    public function execute()
+    {
+        /** @var Store $store */
+        foreach ($this->_storeManager->getStores() as $store) {
+            $this->processStore($store);
+        }
+    }
 
-    public function execute() {
+    /**
+     * Process single web store
+     * @param Store $store
+     */
+    protected function processStore(Store $store)
+    {
+        $this->_storeManager->setCurrentStore($store->getId());
 
-        // TODO: get config
-        /** @var Urbit_ProductFeed_Model_Config $config */
-        // $config = Mage::getModel("productfeed/config");
+        $feedHelper = $this->_helper;
 
-        // TODO: get product collection
-        // $products = Mage::getModel(
-        //     "productfeed/list_product",
-        //     $config->filter
-        // );
+        /** @var ProductCollection $productCollection */
+        $productCollection = $this->_productCollectionFactory->create([
+            'filter' => $this->_config->filter,
+        ]);
 
-        // TODO: generate feed
-        // Mage::helper("productfeed/feed")->generateFeed($products);
+        if (!$feedHelper->checkCache()) {
+            $feedHelper->generateFeed($productCollection);
+        }
     }
 
 }

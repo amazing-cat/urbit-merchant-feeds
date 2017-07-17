@@ -6,14 +6,17 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
 use Exception;
 
-// TODO: change PHPDoc properties in according with configuration
 /**
  * Class Config
  * @package Urbit\ProductFeed\Model\Config
  *
+ * Config properties (stored in $_config static property)
  * @property array $cron
  * @property array $filter
  * @property array $fields
+ * @property array $units
+ * @property array $inventory
+ * @property array $attributes
  */
 final class Config
 {
@@ -28,6 +31,10 @@ final class Config
      */
     protected $_scopeConfig;
 
+    /**
+     * Config constructor.
+     * @param ScopeConfigInterface $scopeConfig
+     */
     public function __construct(ScopeConfigInterface $scopeConfig)
     {
         $this->_scopeConfig = $scopeConfig;

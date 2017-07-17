@@ -4,7 +4,10 @@ namespace Urbit\ProductFeed\Controller\Product;
 
 use Magento\Framework\App\Action\Action;
 use Magento\Framework\App\Action\Context;
+use Magento\Framework\App\Response\Http\Interceptor as HttpResponse;
 use Magento\Framework\Controller\Result\JsonFactory;
+
+use Urbit\ProductFeed\Model\Collection\Product as ProductCollection;
 use Urbit\ProductFeed\Model\Collection\ProductFactory as ProductCollectionFactory;
 use Urbit\ProductFeed\Model\Config\Config;
 use Urbit\ProductFeed\Model\Config\ConfigFactory;
@@ -28,11 +31,6 @@ class Json extends Action
     protected $_productCollectionFactory;
 
     /**
-     * @var ProductCollection
-     */
-    protected $_products;
-
-    /**
      * @var FeedHelper
      */
     protected $_helper;
@@ -44,8 +42,6 @@ class Json extends Action
      * @param ProductCollectionFactory $productCollectionFactory
      * @param ConfigFactory $configFactory
      * @param FeedHelper $helper
-     * @internal param Config $config
-     * @internal param ProductCollection $productCollection
      */
     public function __construct(
         Context $context,
@@ -63,44 +59,31 @@ class Json extends Action
     }
 
     /**
-     *
+     * Get feed for current store
      */
     public function execute()
     {
-        /**
-         * Additional time for feed cache to prevent conflict with feed generation cron task
-         */
-        $this->_config->set("cron/cache_duration", $this->_config->cron["cache_duration"] + 10);
+        // Additional time for feed cache to prevent conflict with feed generation cron task
+        $this->_config->set("cron/cache_duration", $this->_config->cron["cache_duration"] + 1);
 
+        /** @var ProductCollection $productCollection */
         $productCollection = $this->_productCollectionFactory->create([
             'filter' => $this->_config->filter,
         ]);
 
-        $productCollection->getCollection()
-            ->addAttributeToSelect('*')
-            ->setPageSize(30)
-        ;
+        $feedHelper = $this->_helper;
 
-        $this->_products = $productCollection;
+        if (!$feedHelper->checkCache()) {
+            $feedHelper->generateFeed($productCollection);
+        }
 
+        /** @var HttpResponse $response */
+        $response = $this->getResponse();
 
-        $json = $this->getProductsJson();
-
-        header("Content-type: text/json");
-        echo $json;
-
-        exit(0);
-    }
-
-    /**
-     * Return json feed data
-     * @return string
-     */
-    public function getProductsJson()
-    {
-        return $this->_helper
-            ->generateFeed($this->_products)
-            ->getDataJson()
+        $response
+            ->setHeader("Content-type", "text/json", true)
+            ->setBody($feedHelper->getDataJson())
+            ->send()
         ;
     }
 }

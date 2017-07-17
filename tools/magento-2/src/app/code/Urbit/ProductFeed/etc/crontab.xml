@@ -1,8 +1,4 @@
 <?xml version="1.0"?>
-<!-- 
-	Command to execute
-	php ../bin/magento cron:run --group="urbit_crongroup"
--->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Cron:etc/crontab.xsd">
     <group id="urbit_crongroup">
         <job name="urbit_cronjob" instance="Urbit\ProductFeed\Cron\GenerateFeed" method="execute">

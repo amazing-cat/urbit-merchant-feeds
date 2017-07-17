@@ -66,6 +66,8 @@ class Feed extends AbstractHelper
      */
     public function generateFeed(ProductCollection $collection)
     {
+        $this->_touch();
+
         /** @var FeedModel $feedProcessor */
         $feedProcessor = $this->_feedFactory->create([
             'products' => $collection,
@@ -86,7 +88,7 @@ class Feed extends AbstractHelper
      */
     public function checkCache()
     {
-        $cacheDuration =$this->_config->get("cron/cache_duration");
+        $cacheDuration = $this->_config->get("cron/cache_duration");
 
         $filePath = $this->getCacheFilePath();
 
@@ -158,5 +160,14 @@ class Feed extends AbstractHelper
     protected function _getStoreID()
     {
         return (int) $this->_storeManager->getStore()->getStoreId(); 
+    }
+
+    /**
+     * Touch (update "last modify" time) cache file to prevent updating data by other process
+     * (e.g. next cron task if feed generation get a lot of time)
+     */
+    protected function _touch()
+    {
+        touch($this->getCacheFilePath());
     }
 }
