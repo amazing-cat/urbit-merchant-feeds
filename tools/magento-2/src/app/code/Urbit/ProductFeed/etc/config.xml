@@ -7,14 +7,13 @@
             </cron>
             <filter>
                 <category></category>
-                <stock>0</stock>
                 <tag_name></tag_name>
                 <tag_value></tag_value>
             </filter>
             <fields>
-                <height></height>
-                <length></length>
-                <width></width>
+                <dimention_height></dimention_height>
+                <dimention_length></dimention_length>
+                <dimention_width></dimention_width>
             </fields>
             <units>
                 <dimension></dimension>

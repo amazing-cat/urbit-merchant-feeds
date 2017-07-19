@@ -15,6 +15,7 @@ use Magento\ConfigurableProduct\Model\Product\Type\ConfigurableFactory as Magent
 use Magento\Catalog\Api\ProductRepositoryInterface as ProductRepository;
 use Magento\Catalog\Model\Product\Type\AbstractType as ProductType;
 use Magento\Catalog\Model\Product\Type\Simple as ProductTypeSimple;
+use Urbit\ProductFeed\Model\Config\ConfigFactory;
 
 use Exception;
 
@@ -66,12 +67,6 @@ class FeedProduct
     protected $_configurableFactory;
 
     /**
-     * Magento product resource object
-     * @var
-     */
-    protected $_resource;
-
-    /**
      * Array with product fields
      * @var array
      */
@@ -98,6 +93,11 @@ class FeedProduct
     protected $_currency;
 
     /**
+     * @var Config
+     */
+    protected $_config;
+
+    /**
      * FeedProduct constructor.
      * @param MagentoProduct $product
      * @param MagentoProductConfigurableFactory $configurableFactory
@@ -106,6 +106,7 @@ class FeedProduct
      * @param CategoryCollectionFactory $categoryCollectionFactory
      * @param Image $imageHelper
      * @param Currency $currency
+     * @param ConfigFactory $configFactory
      */
     public function __construct(
         MagentoProduct $product,
@@ -114,14 +115,18 @@ class FeedProduct
         StoreManagerInterface $store,
         CategoryCollectionFactory $categoryCollectionFactory,
         Image $imageHelper,
-        Currency $currency
+        Currency $currency,
+        ConfigFactory $configFactory
     ) {
         $this->_product  = $productRepository->getById($product->getId());
         $this->_store    = $store;
         $this->_currency = $currency;
+        $this->_config = $configFactory->create();
         $this->_configurableFactory = $configurableFactory;
         $this->_categoryCollectionFactory = $categoryCollectionFactory;
         $this->_imageHelper = $imageHelper;
+
+        $this->_product->setStoreId($this->_getStore()->getId());
     }
 
     /**
@@ -395,7 +400,96 @@ class FeedProduct
      */
     protected function processConfigurableFields()
     {
-        // TODO: Process product attributes to feed root properties
+        $fields = $this->_config->get("fields");
+        $attributes = $this->_config->get("attributes");
+        $units = $this->_config->get("units");
+        $inventory = $this->_config->get('inventory');
+
+        $brand = $this->getAttributeValue($attributes['brands']);
+
+        if ($brand && $brand !== 'No') {
+            $this->brands = array(
+                array(
+                    'name' => $brand,
+                ),
+            );
+        }
+
+        foreach (array('height', 'length', 'width') as $key) {
+            $keyField = "dimention_{$key}";
+
+            if (!isset($fields[$keyField]) || !$fields[$keyField]) {
+                continue;
+            }
+
+            $attr = $this->getAttributeValue($fields[$keyField]);
+
+            if (!$attr || $attr <= 0) {
+                continue;
+            }
+
+            if (isset($units['dimension'])) {
+                $dimensions[$key] = array(
+                    'value' => (float)$attr,
+                    'unit' => $units['dimension']
+                );
+            } else {
+                $dimensions[$key] = array(
+                    'value' => (float)$attr
+                );
+            }
+        }
+
+        $weight = (float) $this->_product->getWeight();
+
+        if ($weight > 0) {
+            if (isset($units['weight'])) {
+                $dimensions['weight'] = array(
+                    'value' => $weight,
+                    'unit' => $units['weight']
+                );
+            } else {
+                $dimensions['weight'] = array(
+                    'value' => $weight
+                );
+            }
+        }
+
+        if (!empty($dimensions)) {
+            $this->dimensions = $dimensions;
+        }
+
+        foreach (array("ean", "mpn") as $key) {
+            if (!isset($inventory[$key]) || !$inventory[$key]) {
+                continue;
+            }
+
+            $attr = $this->getAttributeValue($inventory[$key]);
+
+            if ($attr === null) {
+                continue;
+            }
+
+            $this->{$key} = $attr;
+        }
+
+        foreach (array("sizeType", "size", "color", "gender", "material", "pattern", "age_group", "condition") as $key) {
+            if (!isset($attributes[$key]) || !$attributes[$key]) {
+                continue;
+            }
+
+            $attr = $this->getAttributeValue($attributes[$key]);
+
+            if ($attr === null) {
+                continue;
+            }
+
+            if ($this->checkType($this->getAttributeType($attr)) !== 'string' && $attr == false) {
+                continue;
+            }
+
+            $this->{$key} = $attr;
+        }
     }
 
     /**
@@ -403,7 +497,142 @@ class FeedProduct
      */
     protected function processAttributes()
     {
-        // TODO: Process additional product attributes to feed "attributes" property
+        $attributes = $this->_config->get("attributes");
+
+        if ($attributes['additional'] == null) {
+            return;
+        }
+
+        $additionalAttributes = [];
+
+        $productAttributes = $this->_product->getAttributes();
+
+        foreach ($productAttributes as $k => $attr) {
+            $code = $attr->getAttributeCode();
+            if ($code == "quantity_and_stock_status") {
+                continue;
+            }
+
+            $type = $attr->getFrontend()->getInputType();
+            $value = $this->getAttributeValue($code);
+            $id = $attr->getId();
+
+            if (strpos($attributes['additional'], $code) === false || $value === null) {
+                continue;
+            }
+
+            switch ($type) {
+                case 'select':
+                    $options = $attr->getSource()->getAllOptions();
+
+                    foreach ($options as $option) {
+                        if ($option['value'] == $id) {
+                            $value = $option['label'];
+                        }
+                    }
+                    $type = 'string';
+                    break;
+
+                case 'price':
+                case 'decimal':
+                    $type = 'float';
+                case 'float':
+                    $value = (float) $value;
+                    break;
+
+                case 'multiselect':
+                    $type = 'string';
+                    break;
+
+                case 'textarea':
+                case 'text':
+                case 'varchar':
+                    $type = 'string';
+                    break;
+
+                case 'url':
+                case 'string':
+                    if (preg_match("#^[a-zA-Z]://#", $value)) {
+                        $type = 'url';
+                    }
+                    $value = (string) $value;
+                    break;
+
+                case 'datetime':
+                case 'date':
+                    $type = 'time';
+                    if ($value != "") {
+                        $value = date('c', strtotime($value));
+                    } else {
+                        continue 2;
+                    }
+                    break;
+
+                case 'boolean':
+                case 'bool':
+                    if (in_array(strtolower($value), array('yes','no'))) {
+                        $value = strtolower($value) === 'yes';
+                    }
+                    $type = 'boolean';
+                    break;
+
+                case 'int':
+                    $type = 'number';
+                case 'number':
+                    $value = (int)$value;
+                    break;
+
+                case 'static':
+                default:
+                    continue 2;
+            }
+
+            $additionalAttributes[] = array(
+                'name'  => $code,
+                'type'  => $type,
+                //'unit'  => null,
+                'value' => $value,
+            );
+        }
+
+        if (!empty($additionalAttributes)) {
+            $this->attributes = $additionalAttributes;
+        }
+    }
+
+    /**
+     * @param $type
+     * @return string
+     */
+    protected function checkType($type)
+    {
+        switch ($type) {
+            // String
+            case 'varchar':
+            case 'url':
+            case 'text':
+            case 'string':
+                $type = 'string';
+                break;
+            // Integer
+            case 'int':
+                $type = 'number';
+                break;
+            // Float
+            case 'price':
+            case 'decimal':
+                $type = 'float';
+                break;
+            // Boolean
+            case 'bool':
+                $type = 'boolean';
+                break;
+            // Date/Time
+            case 'datetime':
+                $type = 'time';
+        }
+
+        return $type;
     }
 
     /**
@@ -435,4 +664,50 @@ class FeedProduct
     {
         return $this->_getStore()->getCurrentCurrencyCode();
     }
+
+    /**
+     * Helper function
+     * Get product attribute object
+     * @param string $name
+     * @return
+     */
+    protected function getAttribute($name)
+    {
+        return $this->_product->getResource()->getAttribute($name);
+    }
+
+    /**
+     * Helper function
+     * Get product attribute value
+     * @param string $name
+     * @return mixed
+     */
+    protected function getAttributeValue($name)
+    {
+        $attr = $this->getAttribute($name);
+
+        if (!$attr) {
+            return null;
+        }
+
+        return $attr->getFrontend()->getValue($this->_product);
+    }
+
+    /**
+     * Helper function
+     * Get product attribute type
+     * @param $name
+     * @return mixed|null|string
+     */
+    protected function getAttributeType($name)
+    {
+        $attr = $this->getAttribute($name);
+
+        if (!$attr) {
+            return null;
+        }
+
+        return $attr->getBackendType();
+    }
 }
+

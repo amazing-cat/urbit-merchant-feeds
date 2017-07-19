@@ -1,33 +1,30 @@
 <?php
 
-namespace Urbit\ProductFeed\Model\Feed;
+namespace Urbit\InventoryFeed\Model\Feed;
 
 use Magento\Framework\Locale\Resolver as LocaleResolver;
 use Magento\Store\Api\Data\StoreInterface as MagentoStore;
 use Magento\Framework\App\Config\ScopeConfigInterface as MagentoConfig;
 use Magento\Directory\Api\CountryInformationAcquirerInterface as MagentoCountryInformation;
 use Magento\Catalog\Api\ProductRepositoryInterface as ProductRepository;
-use Urbit\ProductFeed\Model\Collection\Product as ProductCollection;
-use Urbit\ProductFeed\Model\Config\Config;
-use Urbit\ProductFeed\Model\Config\ConfigFactory;
+use Urbit\InventoryFeed\Model\Collection\Product as ProductCollection;
+use Urbit\InventoryFeed\Model\Config\Config;
+use Urbit\InventoryFeed\Model\Config\ConfigFactory;
 
 use Magento\Framework\Exception\NoSuchEntityException;
 
 /**
  * Class Feed
- * @package Urbit\ProductFeed\Model
+ * @package Urbit\InventoryFeed\Model
  */
 class Feed
 {
-    const SCHEDULE_INTERVAL_HOURLY  = 'HOURLY';
-    const SCHEDULE_INTERVAL_DAILY   = 'DAILY';
-    const SCHEDULE_INTERVAL_WEEKLY  = 'WEEKLY';
-    const SCHEDULE_INTERVAL_MONTHLY = 'MONTHLY';
+    const SCHEDULE_INTERVAL_5MIN   = '5MIN';
+    const SCHEDULE_INTERVAL_15MIN  = '15MIN';
+    const SCHEDULE_INTERVAL_30MIN  = '30MIN';
+    const SCHEDULE_INTERVAL_45MIN  = '45MIN';
+    const SCHEDULE_INTERVAL_HOURLY = 'HOURLY';
 
-    const SCHEDULE_INTERVAL_HOURLY_TIME  = 1;
-    const SCHEDULE_INTERVAL_DAILY_TIME   = 24;
-    const SCHEDULE_INTERVAL_WEEKLY_TIME  = 168;
-    const SCHEDULE_INTERVAL_MONTHLY_TIME = 5040;
 
     const FEED_VERSION = '2017-06-28-1';
 
@@ -42,9 +39,9 @@ class Feed
     protected $_products;
 
     /**
-     * @var FeedProductFactory
+     * @var FeedInventoryFactory
      */
-    protected $_feedProductFactory;
+    protected $_feedInventoryFactory;
 
     /**
      * @var MagentoStore
@@ -80,7 +77,7 @@ class Feed
      * Feed constructor.
      * @param ProductCollection $products
      * @param ConfigFactory $configFactory
-     * @param FeedProductFactory $feedProductFactory
+     * @param FeedInventoryFactory $feedInventoryFactory
      * @param MagentoStore $store
      * @param LocaleResolver $locale
      * @param MagentoConfig $scopeConfig
@@ -90,7 +87,7 @@ class Feed
     public function __construct(
         ProductCollection $products,
         ConfigFactory $configFactory,
-        FeedProductFactory $feedProductFactory,
+        FeedInventoryFactory $feedInventoryFactory,
         MagentoStore $store,
         LocaleResolver $locale,
         MagentoConfig $scopeConfig,
@@ -103,7 +100,7 @@ class Feed
         $this->_locale   = $locale;
         $this->_scopeConfig = $scopeConfig;
         $this->_countryInformation = $countryInformation;
-        $this->_feedProductFactory = $feedProductFactory;
+        $this->_feedInventoryFactory = $feedInventoryFactory;
         $this->_productRepository  = $productRepository;
 
     }
@@ -116,12 +113,14 @@ class Feed
         $products = [];
 
         foreach ($this->_products as $product) {
-            $feedProduct = $this->_feedProductFactory->create([
+            //$product = $this->_productRepository->getById($product->getId());
+
+            $feedInventory = $this->_feedInventoryFactory->create([
                 'product' => $product,
             ]);
 
-            if ($feedProduct->process()) {
-                $products[] = $feedProduct->toArray();
+            if ($feedInventory->process()) {
+                $products[] = $feedInventory->toArray();
             }
         }
 
@@ -152,7 +151,7 @@ class Feed
         $version = $this->getFeedVersion();
 
         return array(
-            '$schema' => "https://raw.githubusercontent.com/urbitassociates/urbit-merchant-feeds/master/schemas/inventory/{$version}/product.json",
+            '$schema' => "https://raw.githubusercontent.com/urbitassociates/urbit-merchant-feeds/master/schemas/inventory/{$version}/inventory.json",
             'content_language' => $lang,
             'attribute_language' => $lang,
             'content_type' => 'products',
@@ -177,17 +176,18 @@ class Feed
     public function getIntervalText()
     {
         foreach (array(
-            static::SCHEDULE_INTERVAL_HOURLY_TIME  => static::SCHEDULE_INTERVAL_HOURLY,
-            static::SCHEDULE_INTERVAL_DAILY_TIME   => static::SCHEDULE_INTERVAL_DAILY,
-            static::SCHEDULE_INTERVAL_WEEKLY_TIME  => static::SCHEDULE_INTERVAL_WEEKLY,
-            static::SCHEDULE_INTERVAL_MONTHLY_TIME => static::SCHEDULE_INTERVAL_MONTHLY,
+            5  => self::SCHEDULE_INTERVAL_5MIN,
+            15 => self::SCHEDULE_INTERVAL_15MIN,
+            30 => self::SCHEDULE_INTERVAL_30MIN,
+            45 => self::SCHEDULE_INTERVAL_45MIN,
+            60 => self::SCHEDULE_INTERVAL_HOURLY,
         ) as $time => $val) {
             if ($this->_config->cron['cache_duration'] <= $time) {
                 return $val;
             }
         }
 
-        return static::SCHEDULE_INTERVAL_HOURLY;
+        return self::SCHEDULE_INTERVAL_HOURLY;
     }
 
     public function getFeedVersion()

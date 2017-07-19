@@ -1,6 +1,6 @@
 <?php
 
-namespace Urbit\ProductFeed\Controller\Product;
+namespace Urbit\InventoryFeed\Controller\Product;
 
 use Magento\Framework\App\Action\Action;
 use Magento\Framework\App\Action\Context;
@@ -8,11 +8,11 @@ use Magento\Framework\App\Response\Http\Interceptor as HttpResponse;
 use Magento\Framework\Controller\Result\JsonFactory;
 
 use Magento\Framework\HTTP\PhpEnvironment\RemoteAddress;
-use Urbit\ProductFeed\Model\Collection\Product as ProductCollection;
-use Urbit\ProductFeed\Model\Collection\ProductFactory as ProductCollectionFactory;
-use Urbit\ProductFeed\Model\Config\Config;
-use Urbit\ProductFeed\Model\Config\ConfigFactory;
-use Urbit\ProductFeed\Helper\Feed as FeedHelper;
+use Urbit\InventoryFeed\Model\Collection\Product as ProductCollection;
+use Urbit\InventoryFeed\Model\Collection\ProductFactory as ProductCollectionFactory;
+use Urbit\InventoryFeed\Model\Config\Config;
+use Urbit\InventoryFeed\Model\Config\ConfigFactory;
+use Urbit\InventoryFeed\Helper\Feed as FeedHelper;
 
 class Json extends Action
 {

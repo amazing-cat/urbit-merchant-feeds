@@ -1,6 +1,6 @@
 <?php
 
-namespace Urbit\ProductFeed\Model\Config\Source;
+namespace Urbit\InventoryFeed\Model\Config\Source;
 
 use Magento\Eav\Model\Entity\Attribute;
 use Magento\Eav\Model\ResourceModel\Entity\Attribute\Collection as AttributeCollection;
@@ -11,7 +11,7 @@ use Magento\Eav\Model\Entity\TypeFactory as EntityTypeFactory;
 
 /**
  * Class ProductAttributes
- * @package Urbit\ProductFeed\Model\Config\Source
+ * @package Urbit\InventoryFeed\Model\Config\Source
  */
 class ProductAttributes extends AbstractAttributeSource
 {

@@ -1,20 +1,20 @@
 <?php
 
-namespace Urbit\ProductFeed\Helper;
+namespace Urbit\InventoryFeed\Helper;
 
 use Magento\Framework\App\Helper\AbstractHelper;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Store\Model\StoreManagerInterface;
 
-use Urbit\ProductFeed\Model\Config\Config;
-use Urbit\ProductFeed\Model\Config\ConfigFactory;
-use Urbit\ProductFeed\Model\Feed\FeedFactory;
-use Urbit\ProductFeed\Model\Feed\Feed as FeedModel;
-use Urbit\ProductFeed\Model\Collection\Product as ProductCollection;
+use Urbit\InventoryFeed\Model\Config\Config;
+use Urbit\InventoryFeed\Model\Config\ConfigFactory;
+use Urbit\InventoryFeed\Model\Feed\FeedFactory;
+use Urbit\InventoryFeed\Model\Feed\Feed as FeedModel;
+use Urbit\InventoryFeed\Model\Collection\Product as ProductCollection;
 
 /**
  * Class Feed
- * @package Urbit\ProductFeed\Helper
+ * @package Urbit\InventoryFeed\Helper
  */
 class Feed extends AbstractHelper
 {
@@ -104,7 +104,7 @@ class Feed extends AbstractHelper
     {
         $storeID = $this->_getStoreID();
 
-        return $this->_getCacheDir() . "productfeed_{$storeID}.json";
+        return $this->_getCacheDir() . "inventoryfeed_{$storeID}.json";
     }
 
     /**

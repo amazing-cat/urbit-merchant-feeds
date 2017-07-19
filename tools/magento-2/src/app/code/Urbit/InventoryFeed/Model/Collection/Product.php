@@ -1,6 +1,6 @@
 <?php
 
-namespace Urbit\ProductFeed\Model\Collection;
+namespace Urbit\InventoryFeed\Model\Collection;
 
 use Magento\Catalog\Model\Product as MagentoProduct;
 use Magento\Catalog\Model\Product\Attribute\Source\Status as MagentoProductStatus;
@@ -9,14 +9,14 @@ use Magento\Catalog\Model\ProductFactory as MagentoProductFactory;
 use Magento\Catalog\Model\ResourceModel\Product\Collection as MagentoProductCollection;
 use Exception;
 use IteratorAggregate;
-use Magento\Store\Api\Data\StoreInterface as Store;
 use Magento\CatalogInventory\Helper\Stock as StockHelper;
+use Magento\Store\Api\Data\StoreInterface as Store;
 use Magento\Eav\Model\Entity\Attribute;
 use Magento\Eav\Model\ResourceModel\Entity\Attribute\Collection as AttributeCollection;
 
 /**
  * Class Product
- * @package Urbit\ProductFeed\Model\Collection
+ * @package Urbit\InventoryFeed\Model\Collection
  */
 class Product implements IteratorAggregate
 {
@@ -25,7 +25,6 @@ class Product implements IteratorAggregate
      */
     protected $_filterDefault = [
         'category' => [],
-        'stock'    => false,
         'attribute_name'  => false,
         'attribute_value' => false,
     ];
@@ -119,13 +118,15 @@ class Product implements IteratorAggregate
         }
 
         /** @var MagentoProductCollection $collection */
-        $collection = $this->_productModel->getCollection();
+        $collection = $this->_productModel->getCollection()
+            ->addAttributeToSelect('*')
+        ;
 
         /** @var array $filter */
         $filter = $this->getFilter();
 
-        $statuses    = $this->_productStatus->getVisibleStatusIds();
-        $visibilites = $this->_productVisibility->getVisibleStatusIds();
+        $statuses     = $this->_productStatus->getVisibleStatusIds();
+        $visibilities = $this->_productVisibility->getVisibleStatusIds();
 
         // filtering products with available stock only
         $this->_stockHelper->addInStockFilterToCollection($collection);
@@ -138,8 +139,8 @@ class Product implements IteratorAggregate
         }
 
         // filtration for visible products
-        if ($visibilites && !empty($visibilites)) {
-            $collection->setVisibility($visibilites);
+        if ($visibilities && !empty($visibilities)) {
+            $collection->setVisibility($visibilities);
         }
 
         // filtration by current store

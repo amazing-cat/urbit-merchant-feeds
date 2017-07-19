@@ -6,13 +6,14 @@
         </tab>
         <section id="productfeed_config" translate="label" sortOrder="130" showInDefault="1" showInWebsite="1" showInStore="1">
             <class>separator-top</class>
-            <label>Product Fields</label>
+            <label>Product Feed</label>
             <tab>urbit</tab>
             <resource>Urbit_ProductFeed::config</resource>
             <group id="cron" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Feed Cache</label>
                 <field id="cache_duration" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Cache duration</label>
+                    <comment>In hours</comment>
                 </field>
             </group>
             <group id="filter" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -20,9 +21,7 @@
                 <field id="category" translate="label" type="multiselect" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Categories</label>
                     <source_model>Urbit\ProductFeed\Model\Config\Source\Category</source_model>
-                </field>
-                <field id="stock" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Minimal Stock</label>
+                    <can_be_empty>1</can_be_empty>
                 </field>
                 <field id="tag_name" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>"Tag" Attribute Name</label>
@@ -34,15 +33,15 @@
             </group>
             <group id="fields" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Dimensions Attributes</label>
-                <field id="height" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="dimention_height" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Height</label>
                     <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
                 </field>
-                <field id="length" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="dimention_length" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Length</label>
                     <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
                 </field>
-                <field id="width" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="dimention_width" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Width</label>
                     <source_model>Urbit\ProductFeed\Model\Config\Source\ProductAttributes</source_model>
                 </field>
