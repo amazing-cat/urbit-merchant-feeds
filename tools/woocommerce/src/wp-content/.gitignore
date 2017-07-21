@@ -1,0 +1,10 @@
+index.php
+
+languages/
+themes/
+upgrade/
+uploads/
+plugins/*
+
+!plugins/urber-*/
+plugins/urber-product-feed/cache/*
