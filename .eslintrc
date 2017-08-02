@@ -1,5 +1,9 @@
-{
-    "plugins": [
-        "json"
-    ]
-}
+extends:
+  - urbit/config/common
+  - urbit/config/node
+  - urbit/config/esnext
+  - prettier
+plugins:
+  - json
+rules:
+  id-length: 0
