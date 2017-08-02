@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="Urbit::AdminMenu"
+            title="Urbit"
+            module="Urbit_ProductFeed"
+            sortOrder="20"
+            resource="Magento_Backend::content"
+        />
+        <add id="Urbit::AdminMenu_ProductFeed"
+            title="Product Feed"
+            module="Urbit_ProductFeed"
+            sortOrder="1"
+            action="adminhtml/system_config/edit/section/productfeed_config/index"
+            parent="Urbit::AdminMenu"
+            resource="Magento_Backend::content"
+        />
+    </menu>
+</config>
