@@ -33,6 +33,10 @@ class Urbit_InventoryFeed_Model_Config_Attribute extends Urbit_InventoryFeed_Mod
         );
 
         foreach ($list['items'] as $attr) {
+            if (!isset($attr['is_user_defined']) || !isset($attr['attribute_code']) || !isset($attr['frontend_label'])) {
+                continue;
+            }
+
             $hasLabel = strlen(trim($attr['frontend_label']));
 
             if ($hasLabel) {

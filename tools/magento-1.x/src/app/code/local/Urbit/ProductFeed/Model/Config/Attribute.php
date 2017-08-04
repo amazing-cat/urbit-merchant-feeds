@@ -31,7 +31,7 @@ class Urbit_ProductFeed_Model_Config_Attribute extends Urbit_ProductFeed_Model_C
         );
 
         foreach ($list['items'] as $attr) {
-            if (!$attr['is_user_defined']) {
+            if (!isset($attr['is_user_defined']) || !isset($attr['attribute_code']) || !isset($attr['frontend_label'])) {
                 continue;
             }
 

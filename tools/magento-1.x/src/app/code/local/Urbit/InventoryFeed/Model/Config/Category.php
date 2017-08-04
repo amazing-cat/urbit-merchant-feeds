@@ -36,6 +36,7 @@ class Urbit_InventoryFeed_Model_Config_Category extends Urbit_InventoryFeed_Mode
         ;
 
         foreach ($categoriesArray as $categoryId => $category) {
+
             if (!isset($category['name'])) {
                 continue;
             }
@@ -44,7 +45,7 @@ class Urbit_InventoryFeed_Model_Config_Category extends Urbit_InventoryFeed_Mode
             $nameParts = array();
 
             foreach ($categoryIds as $catId) {
-                if ($catId == 1) {
+                if ($catId == 1 || !isset($allCategoriesArray[$catId]) || !isset($allCategoriesArray[$catId]['name'])) {
                     continue;
                 }
 

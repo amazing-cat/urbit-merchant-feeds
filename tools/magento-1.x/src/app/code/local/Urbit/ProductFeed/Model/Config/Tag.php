@@ -32,6 +32,10 @@ class Urbit_ProductFeed_Model_Config_Tag extends Urbit_ProductFeed_Model_Config_
         $tags = array();
 
         foreach ($list['items'] as $tag) {
+            if (!isset($tag['tag_id']) || !isset($tag['name'])) {
+                continue;
+            }
+
             $tags[] = array(
                 'value' => $tag['tag_id'],
                 'label' => $tag['name'],

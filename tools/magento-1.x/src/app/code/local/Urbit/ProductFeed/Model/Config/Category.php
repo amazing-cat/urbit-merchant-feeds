@@ -44,7 +44,7 @@ class Urbit_ProductFeed_Model_Config_Category extends Urbit_ProductFeed_Model_Co
             $nameParts = array();
 
             foreach ($categoryIds as $catId) {
-                if ($catId == 1) {
+                if ($catId == 1 || !isset($allCategoriesArray[$catId]) || !isset($allCategoriesArray[$catId]['name'])) {
                     continue;
                 }
 
