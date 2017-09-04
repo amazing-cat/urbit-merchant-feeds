@@ -20,25 +20,52 @@ class Urbit_ProductfeedFeedModuleFrontController extends ModuleFrontController
     public function initContent()
     {
         parent::initContent();
+
         header('Content-Type: application/json');
         $this->setTemplate('module:urbit_productfeed/views/templates/front/feedtemp.tpl');
 
-        $context = Context::getContext();
-        $this->_products = Product::getProducts($context->language->id, 0, 0, 'id_product', 'DESC');
-        $feed = new Feed($this->_products);
-
-        echo json_encode($feed->toArray(), JSON_PRETTY_PRINT);
+        if (isset($_GET['cron'])) {
+            $this->generateByCron();
+        } else {
+            echo $this->getProductsJson();
+        }
     }
 
     /**
+     * Write feed to file and return feed from this file
      * @return string
      */
     public function getProductsJson()
     {
-        $feedHelper = new FeedHelper();
+        $feedHelper = new Urbit_Productfeed_FeedHelper();
 
-        $feedHelper->generateFeed($this->_products);
+        if (!$feedHelper->checkCache()) {
+	        $context = Context::getContext();
+	        $categoryFilters = Urbit_Productfeed_Feed::getCategoryFilters();
+	        $tagFilters = Urbit_Productfeed_Feed::getTagsFilters();
+
+	        $products = Urbit_Productfeed_Feed::getProductsFilteredByCategoriesAndTags($context->language->id, 0, 0, 'id_product', 'DESC', $categoryFilters, $tagFilters);
+
+	        $feedHelper->generateFeed($products);
+        }
 
         return $feedHelper->getDataJson();
+    }
+
+    /**
+     * Write feed to file
+     */
+    public function generateByCron()
+    {
+        $feedHelper = new Urbit_Productfeed_FeedHelper();
+
+        if (!$feedHelper->checkCache()) {
+            $context = Context::getContext();
+            $categoryFilters = Urbit_Productfeed_Feed::getCategoryFilters();
+            $tagFilters = Urbit_Productfeed_Feed::getTagsFilters();
+
+            $products = Urbit_Productfeed_Feed::getProductsFilteredByCategoriesAndTags($context->language->id, 0, 0, 'id_product', 'DESC', $categoryFilters, $tagFilters);
+            $feedHelper->generateFeed($products);
+        }
     }
 }

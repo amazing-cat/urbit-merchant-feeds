@@ -1,7 +1,7 @@
 <?php
 
 $sql = array(
-    'DROP TAB:E `'._DB_PREFIX_.'urbit_productfeed`'
+    'DROP TABLE `'._DB_PREFIX_.'urbit_productfeed`'
 );
 
 foreach ($sql as $query) {

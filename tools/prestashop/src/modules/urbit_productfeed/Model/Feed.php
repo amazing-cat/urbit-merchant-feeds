@@ -5,7 +5,7 @@ include_once(_PS_MODULE_DIR_ . 'urbit_productfeed' . DIRECTORY_SEPARATOR . 'Mode
 /**
  * Class Feed
  */
-class Feed
+class Urbit_Productfeed_Feed
 {
     const SCHEDULE_INTERVAL_HOURLY = 'HOURLY';
     const SCHEDULE_INTERVAL_DAILY = 'DAILY';
@@ -53,13 +53,14 @@ class Feed
     protected function process()
     {
         $inventory = [];
+        $minimalStockFilterValue = Configuration::get('URBIT_PRODUCTFEED_MINIMAL_STOCK', null);
 
         foreach ($this->collection as $product) {
             //get all combinations of product
             $combinations = $this->getCombinations($product['id_product']);
 
-            if (empty($combinations)) { //simple product
-                $feedProduct = new FeedProduct($product);
+            if (empty($combinations) && $product['name'] != '') { //simple product
+                $feedProduct = new Urbit_Productfeed_FeedProduct($product);
 
                 if ($feedProduct->process()) {
                     $inventory[] = $feedProduct->toArray();
@@ -67,7 +68,13 @@ class Feed
 
             } else { //product with variables
                 foreach ($combinations as $combId => $combination) {
-                    $feedProduct = new FeedProduct($product, $combId, $combination);
+                    if ($minimalStockFilterValue && ($combination['quantity'] < $minimalStockFilterValue)) {
+                        continue;
+                    } elseif ($combination['quantity'] <= 0) {
+                        continue;
+                    }
+
+                    $feedProduct = new Urbit_Productfeed_FeedProduct($product, $combId, $combination);
 
                     if ($feedProduct->process()) {
                         $inventory[] = $feedProduct->toArray();
@@ -79,6 +86,10 @@ class Feed
         $this->data = $inventory;
     }
 
+    /**
+     * Returns array with feed
+     * @return array
+     */
     public function toArray()
     {
         if (empty($this->data)) {
@@ -128,6 +139,7 @@ class Feed
                     'quantity'   => $combination['quantity'],
                     'price'      => number_format((float)Product::getPriceStatic($productId, true, $combination['id_product_attribute']), 2, '.', ''),
                     'attributes' => [$combination['group_name'] => $combination['attribute_name']],
+                    'product_id' => $combination['id_product'],
                 ];
             } else {
                 $infoArray[$combination['id_product_attribute']]['attributes'][$combination['group_name']] = $combination['attribute_name'];
@@ -135,6 +147,110 @@ class Feed
         }
 
         return $infoArray;
+    }
+
+    /**
+     * Get categories filters from config
+     * @return array|null
+     */
+    public static function getCategoryFilters()
+    {
+        $filterValue = Configuration::get('URBIT_PRODUCTFEED_FILTER_CATEGORIES', null);
+
+        if (!$filterValue) {
+            return null;
+        } else {
+            return explode(',', $filterValue);
+        }
+    }
+
+    /**
+     * Get tags filters from config
+     * @return array|null
+     */
+    public static function getTagsFilters()
+    {
+        $filterValue = Configuration::get('URBIT_PRODUCTFEED_TAGS_IDS', null);
+
+        if (!$filterValue) {
+            return null;
+        } else {
+            return explode(',', $filterValue);
+        }
+    }
+
+    /**
+     * Get Product collection filtered by categories and tags
+     * @param $id_lang
+     * @param $start
+     * @param $limit
+     * @param $order_by
+     * @param $order_way
+     * @param bool $categoriesArray
+     * @param bool $tagsArray
+     * @param bool $only_active
+     * @param Context|null $context
+     * @return array|false|mysqli_result|null|PDOStatement|resource
+     */
+    public static function getProductsFilteredByCategoriesAndTags($id_lang, $start, $limit, $order_by, $order_way, $categoriesArray = false, $tagsArray = false,
+                                                                  $only_active = false, Context $context = null)
+    {
+
+        if (!$context) {
+            $context = Context::getContext();
+        }
+
+        $front = true;
+        if (!in_array($context->controller->controller_type, ['front', 'modulefront'])) {
+            $front = false;
+        }
+
+        if (!Validate::isOrderBy($order_by) || !Validate::isOrderWay($order_way)) {
+            die(Tools::displayError());
+        }
+
+        if ($order_by == 'id_product' || $order_by == 'price' || $order_by == 'date_add' || $order_by == 'date_upd') {
+            $order_by_prefix = 'p';
+        } elseif ($order_by == 'name') {
+            $order_by_prefix = 'pl';
+        } elseif ($order_by == 'position') {
+            $order_by_prefix = 'c';
+        }
+
+        if (strpos($order_by, '.') > 0) {
+            $order_by = explode('.', $order_by);
+            $order_by_prefix = $order_by[0];
+            $order_by = $order_by[1];
+        }
+
+        $sql = 'SELECT p.*, product_shop.*, pl.* , m.`name` AS manufacturer_name, s.`name` AS supplier_name
+				FROM `' . _DB_PREFIX_ . 'product` p
+				' . Shop::addSqlAssociation('product', 'p') . '
+				LEFT JOIN `' . _DB_PREFIX_ . 'product_lang` pl ON (p.`id_product` = pl.`id_product` ' . Shop::addSqlRestrictionOnLang('pl') . ')
+				LEFT JOIN `' . _DB_PREFIX_ . 'manufacturer` m ON (m.`id_manufacturer` = p.`id_manufacturer`)
+				LEFT JOIN `' . _DB_PREFIX_ . 'supplier` s ON (s.`id_supplier` = p.`id_supplier`)' .
+            ($categoriesArray ? 'LEFT JOIN `' . _DB_PREFIX_ . 'category_product` c ON (c.`id_product` = p.`id_product`)' : '') . ' ' .
+            ($tagsArray ? 'LEFT JOIN `' . _DB_PREFIX_ . 'product_tag` pt ON (pt.`id_product` = p.`id_product`)' : '') . ' ' .
+            ($tagsArray ? 'LEFT JOIN `' . _DB_PREFIX_ . 'tag` t ON (pt.`id_tag` = t.`id_tag`)' : '') . '
+				WHERE pl.`id_lang` = ' . (int)$id_lang .
+            ($categoriesArray ? ' AND c.`id_category` in (' . implode(',', $categoriesArray) . ')' : '') .
+            ($tagsArray ? ' AND t.`name` in ("' . implode(',', $tagsArray) . '")' : '') .
+            ($front ? ' AND product_shop.`visibility` IN ("both", "catalog")' : '') .
+            ($only_active ? ' AND product_shop.`active` = 1' : '') . '
+				ORDER BY ' . (isset($order_by_prefix) ? pSQL($order_by_prefix) . '.' : '') . '`' . pSQL($order_by) . '` ' . pSQL($order_way) .
+            ($limit > 0 ? ' LIMIT ' . (int)$start . ',' . (int)$limit : '');
+
+        $rq = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
+
+        if ($order_by == 'price') {
+            Tools::orderbyPrice($rq, $order_way);
+        }
+
+        foreach ($rq as &$row) {
+            $row = Product::getTaxesInformations($row);
+        }
+
+        return ($rq);
     }
 
     /**

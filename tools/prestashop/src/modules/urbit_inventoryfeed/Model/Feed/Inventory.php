@@ -3,7 +3,7 @@
 /**
  * Class Inventory
  */
-class Inventory
+class Urbit_Inventoryfeed_Inventory
 {
     /**
      * Array with product fields
@@ -143,9 +143,9 @@ class Inventory
         $product = $this->product;
 
         if (!empty($this->combination)) {
-            $this->id = (string)$this->combId;
+            $this->id = ($this->combination['reference']) ? $this->combination['reference'] : $product->id . '-' . $this->combId;
         } else {
-            $this->id = (string)$product->id;
+            $this->id = ($product->reference) ? $product->reference : (string)$product->id;
         }
 
         //add inventory information to feed
@@ -165,27 +165,56 @@ class Inventory
      */
     protected function processPrices()
     {
-        //TODO: correct currency code
         $product = $this->product;
 
         if (!$this->combId) {
-            // Regular price
-            $prices = [
-                [
-                    "currency" => $this->currencyCode,
-                    "value"    => number_format($product->price, 2, '.', ''),
-                    "type"     => "regular",
-                ],
-            ];
-        } else {
-            //Special Price
-            $specialPrice = SpecificPrice:: getByProductId($product->id, $this->combId);
+            $specialPriceProduct = SpecificPrice:: getByProductId($product->id);
 
-            if (isset($specialPrice[0]['reduction'])  && ((float)$specialPrice[0]['reduction'] > 0.00)) {
+            if ((!empty($specialPriceProduct)) && ((float)$specialPriceProduct[0]['reduction'] > 0.00)) {
                 $prices = [
                     [
                         "currency" => $this->currencyCode,
-                        "value"    => $this->combination['price'] + $specialPrice[0]['reduction'],
+                        "value"    => number_format($product->price, 2, '.', ''),
+                        "type"     => "regular",
+                    ],
+                    [
+                        "currency" => $this->currencyCode,
+                        "value"    => Product::getPriceStatic($product->id),
+                        "type"     => "sale",
+                    ],
+                ];
+            } else {
+                $prices = [
+                    [
+                        "currency" => $this->currencyCode,
+                        "value"    => number_format($product->price, 2, '.', ''),
+                        "type"     => "regular",
+                    ],
+                ];
+            }
+        } else {
+            //Special Price
+            $specialPriceProduct = SpecificPrice:: getByProductId($product->id);
+            $specialPrice = SpecificPrice:: getByProductId($product->id, $this->combId);
+
+            if ((!empty($specialPrice)) && ((float)$specialPrice[0]['reduction'] > 0.00)) {
+                $prices = [
+                    [
+                        "currency"      => $this->currencyCode,
+                        "value"         => $this->getFullPrice((float)$this->combination['price'], $specialPrice[0]['reduction_type'], (float)$specialPrice[0]['reduction']),
+                        "type"          => "regular",
+                    ],
+                    [
+                        "currency" => $this->currencyCode,
+                        "value"    => $this->combination['price'],
+                        "type"     => "sale",
+                    ],
+                ];
+            } elseif ((!empty($specialPriceProduct)) && ((float)$specialPriceProduct[0]['id_product_attribute'] == 0)) {
+                $prices = [
+                    [
+                        "currency" => $this->currencyCode,
+                        "value"    => $this->getFullPrice((float)$this->combination['price'], $specialPriceProduct[0]['reduction_type'], (float)$specialPriceProduct[0]['reduction']),
                         "type"     => "regular",
                     ],
                     [
@@ -209,25 +238,37 @@ class Inventory
         $this->prices = $prices;
     }
 
+    protected function getFullPrice($price, $reductionType, $reductionValue)
+    {
+
+        switch ($reductionType) {
+            case 'amount':
+                return $price + $reductionValue;
+                break;
+            case 'percentage':
+                return number_format(floor(($price / (1.00 - $reductionValue)) * 100) / 100, 2, '.', '');
+                break;
+        }
+
+        return $price;
+    }
+
     protected function processInventory()
     {
-        //TODO: correct location + check quantity > 0
-
         $inventory = [];
 
         if (!$this->combId) {
             $quantity = Product::getQuantity($this->product->id);
-            $location = isset($this->product->location) ? $this->product->location : 1;
+            $location = ((isset($this->product->location)) && ($this->product->location != '')) ? $this->product->location : 1;
 
             $inventory[] = [
                 'location' => $location, // Location of current stock
                 'quantity' => $quantity,   // Currently stocked items for location
             ];
         } else {
-
-            $location = isset($this->combination['location']) ? $this->combination['location'] : 1;
+            $location = ((isset($this->combination['location'])) && ($this->combination['location'] != '')) ? $this->combination['location'] : 1;
             $inventory[] = [
-                'location' => 1, // Location of current stock
+                'location' => $location, // Location of current stock
                 'quantity' => $this->combination['quantity'],   // Currently stocked items for location
             ];
         }

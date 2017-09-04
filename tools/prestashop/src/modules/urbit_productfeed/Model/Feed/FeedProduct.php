@@ -3,7 +3,7 @@
 /**
  * Class FeedProduct
  */
-class FeedProduct
+class Urbit_Productfeed_FeedProduct
 {
     /**
      * Array with product fields
@@ -141,20 +141,12 @@ class FeedProduct
     public function process()
     {
         $product = $this->product;
-
-        if (!empty($this->combination)) {
-            $this->id = (string)$this->combId;
-        } else {
-            $this->id = (string)$product->id;
-        }
-
-        $this->name         = $product->name[$this->context->language->id]; //TODO:  сделать для вариативных продуктов имя = имя продукта + его атрибуты (напр. T-Shirt Black L))
-        $this->description  = $product->description[$this->context->language->id];
-        $this->link         = $product->getLink();
-
-
-
+        $this->processId();
+        $this->description = $product->description[$this->context->language->id];
+        $this->link = $product->getLink();
+        $this->processName();
         $this->processPrices();
+        $this->processBrands();
         $this->processCategories();
         $this->processImages();
         $this->processVariableProduct();
@@ -165,31 +157,73 @@ class FeedProduct
     }
 
     /**
+     * Process product id
+     * add to feed product id
+     */
+    protected function processId()
+    {
+        if (!empty($this->combination)) {
+            $this->id = (isset($this->combination['reference']) && $this->combination['reference']) ? $this->combination['reference'] : $this->product->id . '-' . $this->combId;
+        } else {
+            $this->id = ($this->product->reference) ? $this->product->reference : (string)$this->product->id;
+        }
+    }
+
+    /**
      * Process product prices
      */
     protected function processPrices()
     {
-        //TODO: correct currency code
         $product = $this->product;
 
         if (!$this->combId) {
-            // Regular price
-            $prices = [
-                [
-                    "currency" => $this->currencyCode,
-                    "value"    => number_format($product->price, 2, '.', ''),
-                    "type"     => "regular",
-                ],
-            ];
-        } else {
-            //Special Price
-            $specialPrice = SpecificPrice:: getByProductId($product->id, $this->combId);
+            $specialPriceProduct = SpecificPrice:: getByProductId($product->id);
 
-            if ((float)$specialPrice[0]['reduction'] > 0.00) {
+            if ((!empty($specialPriceProduct)) && ((float)$specialPriceProduct[0]['reduction'] > 0.00)) {
                 $prices = [
                     [
                         "currency" => $this->currencyCode,
-                        "value"    => $this->combination['price'] + $specialPrice[0]['reduction'],
+                        "value"    => number_format($product->price, 2, '.', ''),
+                        "type"     => "regular",
+                    ],
+                    [
+                        "currency" => $this->currencyCode,
+                        "value"    => Product::getPriceStatic($product->id),
+                        "type"     => "sale",
+                    ],
+                ];
+            } else {
+                $prices = [
+                    [
+                        "currency" => $this->currencyCode,
+                        "value"    => number_format($product->price, 2, '.', ''),
+                        "type"     => "regular",
+                    ],
+                ];
+            }
+        } else {
+            //Special Price
+            $specialPriceProduct = SpecificPrice:: getByProductId($product->id);
+            $specialPrice = SpecificPrice:: getByProductId($product->id, $this->combId);
+
+            if ((!empty($specialPrice)) && ((float)$specialPrice[0]['reduction'] > 0.00)) {
+                $prices = [
+                    [
+                        "currency" => $this->currencyCode,
+                        "value"    => $this->getFullPrice((float)$this->combination['price'], $specialPrice[0]['reduction_type'], (float)$specialPrice[0]['reduction']),
+                        "type"     => "regular",
+                    ],
+                    [
+                        "currency" => $this->currencyCode,
+                        "value"    => $this->combination['price'],
+                        "type"     => "sale",
+                    ],
+                ];
+            } elseif ((!empty($specialPriceProduct)) && ((float)$specialPriceProduct[0]['id_product_attribute'] == 0)) {
+                $prices = [
+                    [
+                        "currency" => $this->currencyCode,
+                        "value"    => $this->getFullPrice((float)$this->combination['price'], $specialPriceProduct[0]['reduction_type'], (float)$specialPriceProduct[0]['reduction']),
                         "type"     => "regular",
                     ],
                     [
@@ -213,6 +247,30 @@ class FeedProduct
         $this->prices = $prices;
     }
 
+    /**
+     * return full product price from sale price
+     * @param $price
+     * @param $reductionType
+     * @param $reductionValue
+     * @return string
+     */
+    protected function getFullPrice($price, $reductionType, $reductionValue)
+    {
+        switch ($reductionType) {
+            case 'amount':
+                return $price + $reductionValue;
+                break;
+            case 'percentage':
+                return number_format(floor(($price / (1.00 - $reductionValue)) * 100) / 100, 2, '.', '');
+                break;
+        }
+
+        return $price;
+    }
+
+    /*
+     * Process product categories
+     * */
     protected function processCategories()
     {
         $product = $this->product;
@@ -220,25 +278,22 @@ class FeedProduct
 
         $categoriesInfo = Product::getProductCategoriesFull($product->id);
 
-
-        foreach ($categoriesInfo as $category)
-        {
+        foreach ($categoriesInfo as $category) {
             $allCategories = Category::getCategories();
             $parentId = null;
 
-            foreach ($allCategories as $allCategory)
-            {
-                foreach ($allCategory as $childCategory)
-                if ($childCategory['infos']['id_category'] == $category['id_category'])
-                {
-                    $parentId = $childCategory['infos']['id_parent'];
-                    break;
+            foreach ($allCategories as $allCategory) {
+                foreach ($allCategory as $childCategory) {
+                    if ($childCategory['infos']['id_category'] == $category['id_category']) {
+                        $parentId = $childCategory['infos']['id_parent'];
+                        break;
+                    }
                 }
             }
 
-            $categories[] =[
-                'id' => $category['id_category'],
-                'name' => $category['name'],
+            $categories[] = [
+                'id'       => $category['id_category'],
+                'name'     => $category['name'],
                 'parentId' => $parentId,
 
             ];
@@ -247,102 +302,212 @@ class FeedProduct
         $this->categories = $categories;
     }
 
-
+    /*
+     * Process product images and additional images
+     * */
     protected function processImages()
     {
         $product = $this->product;
-        $cover = Product::getCover($product->id);
 
         $linkRewrite = $product->link_rewrite;
-        $image = Context::getContext()->link->getImageLink($linkRewrite, $cover ? $cover['id_image'] : '', 'home_default');
 
         $additional_images = [];
-        foreach (Image::getImages($this->context->language->id, $product->id) as $img)
-        {
-            $imageId = (new Image((int)$img['id_image']))->id;
-            $link = new Link;
-            $additional_images[] = 'http://' . $link->getImageLink($product->link_rewrite, $imageId, 'home_default');   //TODO: 'http://'. возможно стоит переделать
+        $image = null;
+        $coverImageId = null;
+
+        if (!empty($this->combination)) { // combination
+
+            $combinationImagesIds = $product->getCombinationImages($this->context->language->id);
+
+            if (isset($combinationImagesIds[$this->combId])) {
+                $combinationImagesIds = $combinationImagesIds[$this->combId];
+
+                if (!empty($combinationImagesIds)) {
+                    foreach ($combinationImagesIds as $combinationImagesId) {
+                        $additional_images[] = $this->context->link->getImageLink($linkRewrite[1], $combinationImagesId['id_image'], 'large_default');
+                    }
+                } else { //if combination hasn't own image
+                    $coverImageId = Product::getCover($product->id)['id_image'];
+                    $image = $this->context->link->getImageLink($linkRewrite[1], $coverImageId, 'large_default');
+                }
+            }
+        } else {   //simple product
+            $coverImageId = Product::getCover($product->id)['id_image'];
+
+            $additionalImages = Image::getImages($this->context->language->id, $product->id);
+
+            foreach ($additionalImages as $img) {
+                $imageId = (new Image((int)$img['id_image']))->id;
+                if ((int)$coverImageId == $imageId) {
+                    continue;
+                }
+                $link = new Link;
+
+                $additional_image_link = 'http://' . $link->getImageLink($linkRewrite[1], $imageId, 'large_default');
+                $additional_images[] = $additional_image_link;
+            }
+
+            if ($coverImageId) {
+                $image = $this->context->link->getImageLink($linkRewrite[1], $coverImageId, 'large_default');
+            }
         }
 
-
-        if(count($additional_images) > 0)
+        if ($additional_images){
             $this->additional_image_links = $additional_images;
-        else
-            $this->additional_image_links = [];
+        }
 
-        $this->image_link = $image;
+        if ($coverImageId && $image) {
+            $this->image_link = $image;
+        }
     }
-
 
     protected function processVariableProduct()
     {
-
+        if (!empty($this->combination) && ($this->combination['product_id'])) {
+            $this->item_group_id = $this->combination['product_id'];
+        }
     }
 
+    /**
+     *  Process configurable fields
+     */
     protected function processConfigurableFields()
     {
+        $dimensions = [];
+
+        $FieldNames = [
+            'ean',
+            'mpn',
+            'dimension_height',
+            'dimension_length',
+            'dimension_width',
+            'dimension_weight',
+            'color',
+            'size',
+            'gender',
+            'material',
+            'pattern',
+            'age_group',
+            'condition',
+            'size_type',
+            'brands'
+        ];
+
+        foreach ($FieldNames as $FieldName) {
+            
+            if ($FieldName == 'ean') {
+                if (isset($this->product->ean13) && $this->product->ean13) {
+                    $this->ean = $this->product->ean13;
+                    continue;
+                } elseif (isset($this->product->upc) && $this->product->upc) {
+                    $this->ean = $this->product->upc;
+                    continue;
+                } else {
+                    $fieldValue = $this->getFieldValueAndNameByConfigValue($this->getConfigureValueByName($FieldName));
+
+                    if (!empty($fieldValue) && isset($fieldValue['value'])) {
+                        $this->{$FieldName} = $fieldValue['value'];
+                    }
+                    continue;
+                }
+            }
+
+            if ($FieldName == 'mpn') {
+                $fieldValue = $this->getFieldValueAndNameByConfigValue($this->getConfigureValueByName($FieldName));
+
+                if (!empty($fieldValue) && isset($fieldValue['value'])) {
+                    $this->{$FieldName} = $fieldValue['value'];
+                }
+                continue;
+            }
+
+            $configValue = $this->getConfigureValueByName($FieldName);
+
+            if (strpos($FieldName, 'dimension') !== false) {
+                $configInfo =  $this->getFieldValueAndNameByConfigValue($configValue);
+
+                if (isset($configInfo['value'])) {
+                    $dimensionValue = $configInfo['value'];
+
+                    if ($dimensionValue) {
+                        $unit = ($FieldName == 'dimension_weight') ? $this->getConfigureValueByName('weight_unit') : $this->getConfigureValueByName('dimension_unit');
+
+                        if ($unit) {
+                            $dimensions[explode('_', $FieldName)[1]] = [
+                                'value' => (float)$dimensionValue,
+                                'unit'  => ($FieldName == 'dimension_weight') ? $this->getConfigureValueByName('weight_unit') : $this->getConfigureValueByName('dimension_unit'),
+                            ];
+                        } else {
+                            $dimensions[explode('_', $FieldName)[1]] = [
+                                'value' => (float)$dimensionValue,
+                            ];
+                        }
+                    }
+                }
+                continue;
+            }
+
+            $fieldValue = $this->getFieldValueAndNameByConfigValue($this->getConfigureValueByName($FieldName));
+
+            if ($FieldName == 'ean') {
+                print_r($this->getConfigureValueByName($FieldName));
+                exit;
+            }
+            if (!empty($fieldValue)) {
+                $this->{$FieldName} = $fieldValue;
+            }
+        }
+
+        if (!empty($dimensions)) {
+            $this->dimensions = $dimensions;
+        }
 
     }
 
+    /**
+     * Process attributes
+     */
     protected function processAttributes()
     {
         $product = $this->product;
         $attributes = [];
 
-        $combinations = $product->getAttributeCombinations($this->context->language->id);
+        $additionalAttributes = Configuration::get('URBIT_PRODUCTFEED_ATTRIBUTE_ADDITIONAL_ATTRIBUTE');
 
-        $moduleConfigureAttributes =
-            [
-                'URBIT_PRODUCTFEED_ATTRIBUTE_COLOR'                 => Configuration::get('URBIT_PRODUCTFEED_ATTRIBUTE_COLOR'),
-                'URBIT_PRODUCTFEED_ATTRIBUTE_SIZE'                  => Configuration::get('URBIT_PRODUCTFEED_ATTRIBUTE_SIZE'),
-                'URBIT_PRODUCTFEED_ATTRIBUTE_GENDER'                => Configuration::get('URBIT_PRODUCTFEED_ATTRIBUTE_GENDER'),
-                'URBIT_PRODUCTFEED_ATTRIBUTE_MATERIAL'              => Configuration::get('URBIT_PRODUCTFEED_ATTRIBUTE_MATERIAL'),
-                'URBIT_PRODUCTFEED_ATTRIBUTE_PATTERN'               => Configuration::get('URBIT_PRODUCTFEED_ATTRIBUTE_PATTERN'),
-                'URBIT_PRODUCTFEED_ATTRIBUTE_AGE_GROUP'             => Configuration::get('URBIT_PRODUCTFEED_ATTRIBUTE_AGE_GROUP'),
-                'URBIT_PRODUCTFEED_ATTRIBUTE_CONDITION'             => Configuration::get('URBIT_PRODUCTFEED_ATTRIBUTE_CONDITION'),
-                'URBIT_PRODUCTFEED_ATTRIBUTE_SIZE_TYPE'             => Configuration::get('URBIT_PRODUCTFEED_ATTRIBUTE_SIZE_TYPE'),
-                'URBIT_PRODUCTFEED_ATTRIBUTE_BRANDS'                => Configuration::get('URBIT_PRODUCTFEED_ATTRIBUTE_BRANDS'),
-                'URBIT_PRODUCTFEED_ATTRIBUTE_ADDITIONAL_ATTRIBUTE'  => Configuration::get('URBIT_PRODUCTFEED_ATTRIBUTE_ADDITIONAL_ATTRIBUTE'),
-            ];
-//
-//        //foreach ($product->getAttributesGroups($this->context->language->id) as $k => $attr)
-//        foreach ($product->getatt($this->context->language->id) as $k => $attr)
-//        {
-//            $code = null;
-//            $type = null;
-//            $value = null;
-//
-//
-//            $attributes[] = array(
-//                'name'  => $code,
-//                'type'  => $type,
-//                //'unit'  => null,
-//                'value' => $value,
-//            );
-//        }
-//
-//
-//
-////        foreach ($attributes as $attribute)
-////        {
-////
-////
-////            $result[]  =
-////            [
-////                'name' => $attribute['group_name'], // "group_name":"Цвет",
-////                'type' => 'string', // null,
-////                'unit' => null,
-////                'value' => $attribute['attribute_name'], // "attribute_name":"Оранжевый",
-////            ];
-////        }
-//
-//        $allattrib = Attribute::getAttributes($this->context->language->id, $not_null = false);
-//
-//        $this->config = $moduleConfigureAttributes;
-//        $this->combinations = $combinations;
-        $this->attributes = $attributes;
+        //check product features
+        $FrontFeatures = $product->getFrontFeatures($this->context->language->id);
+
+        if (!empty($FrontFeatures)) {
+            foreach ($FrontFeatures as $frontFeature) {
+                if (in_array('f' . $frontFeature['id_feature'], explode(',', $additionalAttributes))) {
+                    $attributes[] = [
+                        'name'  => $frontFeature['name'],
+                        'type'  => 'string',
+                        'value' => $frontFeature['value'],
+                    ];
+                }
+            }
+        }
+
+        //check product attributes
+        $attributeCombinations = $product->getAttributeCombinations($this->context->language->id);
+
+        if (!empty($attributeCombinations)) {
+            foreach ($attributeCombinations as $attributeCombination) {
+                if (in_array('a' . $attributeCombination['id_attribute_group'], explode(',', $additionalAttributes)) && $attributeCombination['id_product_attribute'] == $this->combId) {
+                    $attributes[] = [
+                        'name'  => $attributeCombination['group_name'],
+                        'type'  => 'string',
+                        'value' => $attributeCombination['attribute_name'],
+                    ];
+                }
+            }
+        }
+
+        if (!empty($attributes)) {
+            $this->attributes = $attributes;
+        }
     }
-
 
     /**
      * Helper function
@@ -353,5 +518,113 @@ class FeedProduct
     {
         return $this->context->currency->iso_code;
     }
+
+    /**
+     * Process name
+     */
+    protected function processName()
+    {
+        $product = $this->product;
+        $name = $product->name[$this->context->language->id];
+
+        if (!empty($this->combination))  // combination
+        {
+            $attributeResume = $product->getAttributesResume($this->context->language->id);
+            foreach ($attributeResume as $attributesSet) {
+                if ($attributesSet['id_product_attribute'] == $this->combId) {
+                    foreach ($product->getAttributeCombinationsById($attributesSet['id_product_attribute'], $this->context->language->id) as $attribute) {
+                        $name = $name . ' ' . $attribute['attribute_name'];
+                    }
+                    break;
+                }
+
+            }
+        }
+
+        $this->name = $name;
+    }
+
+    /**
+     * Process brands
+     */
+    protected function processBrands()
+    {
+        $product = $this->product;
+        $brands = [];
+
+        if ($product->id_manufacturer != "0") {
+            $brands[] =
+                [
+                    'name' => Manufacturer::getNameById($product->id_manufacturer),
+                ];
+        }
+
+        if (!empty($brands)) {
+            $this->brands = $brands;
+        }
+    }
+
+
+    /**
+     * Helper function
+     * Get configure value by name
+     * @return string
+     */
+    protected function getConfigureValueByName($name)
+    {
+        $key = 'URBIT_PRODUCTFEED_';
+        $prefix = explode('_', $name)[0];
+
+        if ($prefix != 'dimension' && $prefix != 'weight') {
+            $key = $key . 'ATTRIBUTE_' . strtoupper($name);
+        } else {
+            $key = $key . strtoupper($name);
+        }
+
+        return Configuration::get($key);
+    }
+
+    /**
+     * Helper function
+     * Get field value by config name
+     * @return array | null
+     */
+    protected function getFieldValueAndNameByConfigValue($configValue)
+    {
+        $product = $this->product;
+        $type = substr($configValue, 0, 1);
+        $id = substr($configValue, 1);
+
+        switch ($type) {
+            case 'a':   // case attribute
+                $attributeCombinations = $product->getAttributeCombinations($this->context->language->id);
+                //$this->DEBUGATTRIB = $attributeCombinations;
+                foreach ($attributeCombinations as $attributeCombination) {
+                    if ($attributeCombination['id_product_attribute'] == $this->combId && $attributeCombination['id_attribute_group'] == $id) {
+                        return $attributeCombination['attribute_name'];
+                    }
+                }
+                //return $attributeCombinations;
+                break;
+            case 'f':   // case feature
+
+                $FrontFeatures = $product->getFrontFeatures($this->context->language->id);
+                //$this->FRONTDEBUG = $FrontFeatures;
+                foreach ($FrontFeatures as $frontFeature) {
+                    if ($frontFeature['id_feature'] == $id) {
+                        return [
+                            'value' => $frontFeature['value'],
+                            'name'  => $frontFeature['name'],
+                        ];
+                    }
+                }
+                return $FrontFeatures;
+                break;
+        }
+
+        return null; // TODO: should throw exception ?
+
+    }
+
 
 }

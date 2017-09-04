@@ -5,7 +5,7 @@ include_once(_PS_MODULE_DIR_ . 'urbit_inventoryfeed' . DIRECTORY_SEPARATOR . 'Mo
 /**
  * Class FeedHelper
  */
-class FeedHelper
+class Urbit_Inventoryfeed_FeedHelper
 {
     /**
      * @param $collection
@@ -13,7 +13,7 @@ class FeedHelper
      */
     public function generateFeed($collection)
     {
-        $feed = new Feed($collection);
+        $feed = new Urbit_Inventoryfeed_Feed($collection);
 
         $json = json_encode($feed->toArray(), JSON_PRETTY_PRINT);
 
@@ -81,5 +81,4 @@ class FeedHelper
     {
         return file_put_contents($this->getCacheFilePath(), $json);
     }
-
 }

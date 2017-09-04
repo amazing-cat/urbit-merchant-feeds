@@ -5,11 +5,16 @@ include_once(_PS_MODULE_DIR_ . 'urbit_productfeed' . DIRECTORY_SEPARATOR . 'Mode
 /**
  * Class FeedHelper
  */
-class FeedHelper
+class Urbit_Productfeed_FeedHelper
 {
+    /**
+     * Returns Json with feed
+     * @param $collection
+     * @return string
+     */
     public function generateFeed($collection)
     {
-        $feed = new Feed($collection);
+        $feed = new Urbit_Productfeed_Feed($collection);
 
         $json = json_encode($feed->toArray(), JSON_PRETTY_PRINT);
 
@@ -37,7 +42,7 @@ class FeedHelper
      */
     public function getCacheFilePath()
     {
-        return dirname(__FILE__).'/../productfeed.json';
+        return dirname(__FILE__) . '/../Json/productfeed.json';
     }
 
     /**

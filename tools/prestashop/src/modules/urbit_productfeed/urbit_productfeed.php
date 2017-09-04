@@ -237,15 +237,39 @@ class Urbit_productfeed extends Module
         return $optionsForTagSelect;
     }
 
+    protected function getCacheOptions()
+    {
+        return [
+            [
+                'id'   => 1,
+                'name' => 'Hourly',
+            ],
+            [
+                'id'   => 24,
+                'name' => 'Daily',
+            ],
+            [
+                'id'   => 168,
+                'name' => 'Weekly',
+            ],
+            [
+                'id'   => 5040,
+                'name' => 'Monthly',
+            ],
+        ];
+    }
+
     /**
      * @return array
      */
     protected function getProductFeedConfigForm()
     {
         $optionsForAttributeSelect = $this->getAttributesOptions(true);
-        $optionsForAttributeMultiSelect = $this->getAttributesOptions();
+        $optionsForFeaturesAndAttributesSelect = $this->getFeaturesAndAttributesOptions(true);
+        $optionsForAttributeMultiSelect = $this->getFeaturesAndAttributesOptions(false);;
         $optionsForCategorySelect = $this->getCategoriesOptions();
         $optionsForTagSelect = $this->getTagsOptions();
+        $optionsForCacheSelect = $this->getCacheOptions();
 
         $fields_form = [];
 
@@ -257,10 +281,15 @@ class Urbit_productfeed extends Module
             ],
             'input'  => [
                 [
-                    'type'  => 'text',
-                    'label' => $this->l('Cache duration'),
-                    'name'  => 'URBIT_PRODUCTFEED_CACHE_DURATION',
-                    'class' => 'fixed-width-xl',
+                    'type'    => 'select',
+                    'label'   => $this->l('Cache duration'),
+                    'name'    => 'URBIT_PRODUCTFEED_CACHE_DURATION',
+                    'options' => [
+                        'query' => $optionsForCacheSelect,
+                        'id'    => 'id',
+                        'name'  => 'name',
+                    ],
+                    'class'   => 'fixed-width-xxl',
                 ],
             ],
         ];
@@ -282,6 +311,7 @@ class Urbit_productfeed extends Module
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'    => 'fixed-width-xxl',
                 ],
                 [
                     'type'     => 'select',
@@ -293,17 +323,18 @@ class Urbit_productfeed extends Module
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'    => 'fixed-width-xxl',
                 ],
                 [
                     'type'  => 'text',
                     'label' => $this->l('Minimal Stock'),
                     'name'  => 'URBIT_PRODUCTFEED_MINIMAL_STOCK',
-                    'class' => 'fixed-width-xl',
+                    'class' => 'fixed-width-xxl',
                 ],
             ],
         ];
 
-        //Product Dimensions
+        //Product Dimentions
         $fields_form[2]['form'] = [
             'legend' => [
                 'title' => $this->l('Product Fields - Product Dimentions'),
@@ -315,30 +346,44 @@ class Urbit_productfeed extends Module
                     'label'   => $this->l('Height'),
                     'name'    => 'URBIT_PRODUCTFEED_DIMENSION_HEIGHT',
                     'options' => [
-                        'query' => $optionsForAttributeSelect,
+                        'query' => $optionsForFeaturesAndAttributesSelect,
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'   => 'fixed-width-xxl',
                 ],
                 [
                     'type'    => 'select',
                     'label'   => $this->l('Length'),
                     'name'    => 'URBIT_PRODUCTFEED_DIMENSION_LENGTH',
                     'options' => [
-                        'query' => $optionsForAttributeSelect,
+                        'query' => $optionsForFeaturesAndAttributesSelect,
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'   => 'fixed-width-xxl',
                 ],
                 [
                     'type'    => 'select',
                     'label'   => $this->l('Width'),
                     'name'    => 'URBIT_PRODUCTFEED_DIMENSION_WIDTH',
                     'options' => [
-                        'query' => $optionsForAttributeSelect,
+                        'query' => $optionsForFeaturesAndAttributesSelect,
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'   => 'fixed-width-xxl',
+                ],
+                [
+                    'type'    => 'select',
+                    'label'   => $this->l('Weight'),
+                    'name'    => 'URBIT_PRODUCTFEED_DIMENSION_WEIGHT',
+                    'options' => [
+                        'query' => $optionsForFeaturesAndAttributesSelect,
+                        'id'    => 'id',
+                        'name'  => 'name',
+                    ],
+                    'class'   => 'fixed-width-xxl',
                 ],
             ],
         ];
@@ -351,24 +396,16 @@ class Urbit_productfeed extends Module
             ],
             'input'  => [
                 [
-                    'type'    => 'select',
-                    'label'   => $this->l('Dimension unit'),
-                    'name'    => 'URBIT_PRODUCTFEED_DIMENSION_UNIT',
-                    'options' => [
-                        'query' => $optionsForAttributeSelect,
-                        'id'    => 'id',
-                        'name'  => 'name',
-                    ],
+                    'type'  => 'text',
+                    'label' => $this->l('Dimension unit'),
+                    'name'  => 'URBIT_PRODUCTFEED_DIMENSION_UNIT',
+                    'class' => 'fixed-width-xxl',
                 ],
                 [
-                    'type'    => 'select',
-                    'label'   => $this->l('Weight unit'),
-                    'name'    => 'URBIT_PRODUCTFEED_WEIGHT_UNIT',
-                    'options' => [
-                        'query' => $optionsForAttributeSelect,
-                        'id'    => 'id',
-                        'name'  => 'name',
-                    ],
+                    'type'  => 'text',
+                    'label' => $this->l('Weight unit'),
+                    'name'  => 'URBIT_PRODUCTFEED_WEIGHT_UNIT',
+                    'class' => 'fixed-width-xxl',
                 ],
             ],
         ];
@@ -383,22 +420,24 @@ class Urbit_productfeed extends Module
                 [
                     'type'    => 'select',
                     'label'   => $this->l('EAN/UPC code'),
-                    'name'    => 'URBIT_PRODUCTFEED_EAN',
+                    'name'    => 'URBIT_PRODUCTFEED_ATTRIBUTE_EAN',
                     'options' => [
-                        'query' => $optionsForAttributeSelect,
+                        'query' => $optionsForFeaturesAndAttributesSelect,
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'   => 'fixed-width-xxl',
                 ],
                 [
                     'type'    => 'select',
                     'label'   => $this->l('MPN'),
-                    'name'    => 'URBIT_PRODUCTFEED_MPN',
+                    'name'    => 'URBIT_PRODUCTFEED_ATTRIBUTE_MPN',
                     'options' => [
-                        'query' => $optionsForAttributeSelect,
+                        'query' => $optionsForFeaturesAndAttributesSelect,
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'   => 'fixed-width-xxl',
                 ],
             ],
         ];
@@ -415,90 +454,99 @@ class Urbit_productfeed extends Module
                     'label'   => $this->l('Color'),
                     'name'    => 'URBIT_PRODUCTFEED_ATTRIBUTE_COLOR',
                     'options' => [
-                        'query' => $optionsForAttributeSelect,
+                        'query' => $optionsForFeaturesAndAttributesSelect,
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'   => 'fixed-width-xxl',
                 ],
                 [
                     'type'    => 'select',
                     'label'   => $this->l('Size'),
                     'name'    => 'URBIT_PRODUCTFEED_ATTRIBUTE_SIZE',
                     'options' => [
-                        'query' => $optionsForAttributeSelect,
+                        'query' => $optionsForFeaturesAndAttributesSelect,
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'   => 'fixed-width-xxl',
                 ],
                 [
                     'type'    => 'select',
                     'label'   => $this->l('Gender'),
                     'name'    => 'URBIT_PRODUCTFEED_ATTRIBUTE_GENDER',
                     'options' => [
-                        'query' => $optionsForAttributeSelect,
+                        'query' => $optionsForFeaturesAndAttributesSelect,
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'   => 'fixed-width-xxl',
                 ],
                 [
                     'type'    => 'select',
                     'label'   => $this->l('Material'),
                     'name'    => 'URBIT_PRODUCTFEED_ATTRIBUTE_MATERIAL',
                     'options' => [
-                        'query' => $optionsForAttributeSelect,
+                        'query' => $optionsForFeaturesAndAttributesSelect,
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'   => 'fixed-width-xxl',
                 ],
                 [
                     'type'    => 'select',
                     'label'   => $this->l('Pattern'),
                     'name'    => 'URBIT_PRODUCTFEED_ATTRIBUTE_PATTERN',
                     'options' => [
-                        'query' => $optionsForAttributeSelect,
+                        'query' => $optionsForFeaturesAndAttributesSelect,
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'   => 'fixed-width-xxl',
                 ],
                 [
                     'type'    => 'select',
                     'label'   => $this->l('Age Group'),
                     'name'    => 'URBIT_PRODUCTFEED_ATTRIBUTE_AGE_GROUP',
                     'options' => [
-                        'query' => $optionsForAttributeSelect,
+                        'query' => $optionsForFeaturesAndAttributesSelect,
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'   => 'fixed-width-xxl',
                 ],
                 [
                     'type'    => 'select',
                     'label'   => $this->l('Condition'),
                     'name'    => 'URBIT_PRODUCTFEED_ATTRIBUTE_CONDITION',
                     'options' => [
-                        'query' => $optionsForAttributeSelect,
+                        'query' => $optionsForFeaturesAndAttributesSelect,
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'   => 'fixed-width-xxl',
                 ],
                 [
                     'type'    => 'select',
                     'label'   => $this->l('Size Type'),
                     'name'    => 'URBIT_PRODUCTFEED_ATTRIBUTE_SIZE_TYPE',
                     'options' => [
-                        'query' => $optionsForAttributeSelect,
+                        'query' => $optionsForFeaturesAndAttributesSelect,
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'   => 'fixed-width-xxl',
                 ],
                 [
                     'type'    => 'select',
                     'label'   => $this->l('Brands'),
                     'name'    => 'URBIT_PRODUCTFEED_ATTRIBUTE_BRANDS',
                     'options' => [
-                        'query' => $optionsForAttributeSelect,
+                        'query' => $optionsForFeaturesAndAttributesSelect,
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'   => 'fixed-width-xxl',
                 ],
             ],
         ];
@@ -520,6 +568,7 @@ class Urbit_productfeed extends Module
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'    => 'fixed-width-xxl',
                 ],
             ],
             'submit' => [
@@ -541,10 +590,11 @@ class Urbit_productfeed extends Module
             'URBIT_PRODUCTFEED_DIMENSION_HEIGHT'               => Configuration::get('URBIT_PRODUCTFEED_DIMENSION_HEIGHT', null),
             'URBIT_PRODUCTFEED_DIMENSION_LENGTH'               => Configuration::get('URBIT_PRODUCTFEED_DIMENSION_LENGTH', null),
             'URBIT_PRODUCTFEED_DIMENSION_WIDTH'                => Configuration::get('URBIT_PRODUCTFEED_DIMENSION_WIDTH', null),
+            'URBIT_PRODUCTFEED_DIMENSION_WEIGHT'               => Configuration::get('URBIT_PRODUCTFEED_DIMENSION_WEIGHT', null),
             'URBIT_PRODUCTFEED_DIMENSION_UNIT'                 => Configuration::get('URBIT_PRODUCTFEED_DIMENSION_UNIT', null),
             'URBIT_PRODUCTFEED_WEIGHT_UNIT'                    => Configuration::get('URBIT_PRODUCTFEED_WEIGHT_UNIT', null),
-            'URBIT_PRODUCTFEED_EAN'                            => Configuration::get('EAN', null),
-            'URBIT_PRODUCTFEED_MPN'                            => Configuration::get('MPN', null),
+            'URBIT_PRODUCTFEED_ATTRIBUTE_EAN'                  => Configuration::get('URBIT_PRODUCTFEED_ATTRIBUTE_EAN', null),
+            'URBIT_PRODUCTFEED_ATTRIBUTE_MPN'                  => Configuration::get('URBIT_PRODUCTFEED_ATTRIBUTE_MPN', null),
             'URBIT_PRODUCTFEED_ATTRIBUTE_COLOR'                => Configuration::get('URBIT_PRODUCTFEED_ATTRIBUTE_COLOR', null),
             'URBIT_PRODUCTFEED_ATTRIBUTE_SIZE'                 => Configuration::get('URBIT_PRODUCTFEED_ATTRIBUTE_SIZE', null),
             'URBIT_PRODUCTFEED_ATTRIBUTE_GENDER'               => Configuration::get('URBIT_PRODUCTFEED_ATTRIBUTE_GENDER', null),
@@ -568,10 +618,60 @@ class Urbit_productfeed extends Module
         $form_values = $this->getConfigFormValues();
         foreach (array_keys($form_values) as $key) {
             if (($key == 'URBIT_PRODUCTFEED_ATTRIBUTE_ADDITIONAL_ATTRIBUTE') || ($key == 'URBIT_PRODUCTFEED_TAGS_IDS') || ($key == 'URBIT_PRODUCTFEED_FILTER_CATEGORIES')) {
-                Configuration::updateValue($key, implode(',', Tools::getValue($key)));
+                if ($value = Tools::getValue($key)) {
+                    Configuration::updateValue($key, implode(',', $value));
+                } else {
+                    Configuration::updateValue($key, null);
+                }
             } else {
                 Configuration::updateValue($key, Tools::getValue($key));
             }
         }
+    }
+
+    /**
+     * return options for dimensions selects
+     * @param bool $withNotSetted
+     * @return array
+     */
+    protected function getDimensionsOptions($withNotSetted = false)
+    {
+        $optionsForDimensionsSelect = [];
+
+        if ($withNotSetted) {
+            $optionsForDimensionsSelect[] = ['id' => '', 'name' => 'Not Setted'];
+        }
+
+        $features = Feature::getFeatures($this->context->language->id);
+        foreach ($features as $feature) {
+            $optionsForDimensionsSelect[] = ['id' => $feature['id_feature'], 'name' => $feature['name']];
+        }
+
+        return array_unique($optionsForDimensionsSelect, SORT_REGULAR);
+    }
+
+    /**
+     * return options for selects
+     * @param bool $withNotSetted
+     * @return array
+     */
+    protected function getFeaturesAndAttributesOptions($withNotSetted = false)
+    {
+        $options = [];
+        if ($withNotSetted) {
+            $options[] = ['id' => '', 'name' => 'Not Setted'];
+        }
+
+        $attributes = Attribute::getAttributes($this->context->language->id);
+        foreach ($attributes as $attribute) {
+            $options[] = ['id' => 'a' . $attribute['id_attribute_group'], 'name' => $attribute['attribute_group']];
+        }
+
+        $features = Feature::getFeatures($this->context->language->id);
+        foreach ($features as $feature) {
+            $options[] = ['id' => 'f' . $feature['id_feature'], 'name' => $feature['name']];
+        }
+
+        return array_unique($options, SORT_REGULAR);
     }
 }

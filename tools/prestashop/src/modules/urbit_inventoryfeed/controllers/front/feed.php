@@ -18,7 +18,7 @@ class Urbit_InventoryfeedFeedModuleFrontController extends ModuleFrontController
     protected $_products;
 
     /**
-     *
+     *  init function
      */
     public function initContent()
     {
@@ -26,9 +26,6 @@ class Urbit_InventoryfeedFeedModuleFrontController extends ModuleFrontController
 
         header('Content-Type: application/json');
         $this->setTemplate('module:urbit_inventoryfeed/views/templates/front/feedtemp.tpl');
-
-        $context = Context::getContext();
-        $this->_products = Product::getProducts($context->language->id, 0, 0, 'id_product', 'DESC');
 
         if (isset($_GET['cron'])) {
             $this->generateByCron();
@@ -38,28 +35,40 @@ class Urbit_InventoryfeedFeedModuleFrontController extends ModuleFrontController
     }
 
     /**
+     * Write feed to file and return feed from this file
      * @return string
      */
     public function getProductsJson()
     {
-        $feedHelper = new FeedHelper();
+        $feedHelper = new Urbit_Inventoryfeed_FeedHelper();
 
         if (!$feedHelper->checkCache()) {
-            $feedHelper->generateFeed($this->_products);
+	        $context = Context::getContext();
+	        $categoryFilters = Urbit_Inventoryfeed_Feed::getCategoryFilters();
+	        $tagFilters = Urbit_Inventoryfeed_Feed::getTagsFilters();
+
+	        $products = Urbit_Inventoryfeed_Feed::getProductsFilteredByCategoriesAndTags($context->language->id, 0, 0, 'id_product', 'DESC', $categoryFilters, $tagFilters);
+
+	        $feedHelper->generateFeed($products);
         }
 
         return $feedHelper->getDataJson();
     }
 
     /**
-     *
+     * Write feed to file
      */
     public function generateByCron()
     {
-        $feedHelper = new FeedHelper();
+        $feedHelper = new Urbit_Inventoryfeed_FeedHelper();
 
         if (!$feedHelper->checkCache()) {
-            $feedHelper->generateFeed($this->_products);
+            $context = Context::getContext();
+            $categoryFilters = Urbit_Inventoryfeed_Feed::getCategoryFilters();
+            $tagFilters = Urbit_Inventoryfeed_Feed::getTagsFilters();
+
+            $products = Urbit_Inventoryfeed_Feed::getProductsFilteredByCategoriesAndTags($context->language->id, 0, 0, 'id_product', 'DESC', $categoryFilters, $tagFilters);
+            $feedHelper->generateFeed($products);
         }
     }
 }

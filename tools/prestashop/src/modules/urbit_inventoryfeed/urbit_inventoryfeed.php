@@ -213,6 +213,32 @@ class Urbit_inventoryfeed extends Module
         return $optionsForTagSelect;
     }
 
+    protected function getCacheOptions()
+    {
+        return [
+            [
+                'id'   => 60,
+                'name' => '1 hour',
+            ],
+            [
+                'id'   => 45,
+                'name' => '45 min',
+            ],
+            [
+                'id'   => 30,
+                'name' => '30 min',
+            ],
+            [
+                'id'   => 15,
+                'name' => '15 min',
+            ],
+            [
+                'id'   => 5,
+                'name' => '5 min',
+            ],
+        ];
+    }
+
     /**
      * @return array
      */
@@ -220,6 +246,7 @@ class Urbit_inventoryfeed extends Module
     {
         $optionsForCategorySelect = $this->getCategoriesOptions();
         $optionsForTagSelect = $this->getTagsOptions();
+        $optionsForCacheSelect = $this->getCacheOptions();
 
         $fields_form = [];
 
@@ -231,10 +258,15 @@ class Urbit_inventoryfeed extends Module
             ],
             'input'  => [
                 [
-                    'type'  => 'text',
-                    'label' => $this->l('Cache duration'),
-                    'name'  => 'URBIT_INVENTORYFEED_CACHE_DURATION',
-                    'class' => 'fixed-width-xl',
+                    'type'    => 'select',
+                    'label'   => $this->l('Cache duration'),
+                    'name'    => 'URBIT_INVENTORYFEED_CACHE_DURATION',
+                    'options' => [
+                        'query' => $optionsForCacheSelect,
+                        'id'    => 'id',
+                        'name'  => 'name',
+                    ],
+                    'class'   => 'fixed-width-xxl',
                 ],
             ],
         ];
@@ -256,6 +288,7 @@ class Urbit_inventoryfeed extends Module
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'    => 'fixed-width-xxl',
                 ],
                 [
                     'type'     => 'select',
@@ -267,6 +300,7 @@ class Urbit_inventoryfeed extends Module
                         'id'    => 'id',
                         'name'  => 'name',
                     ],
+                    'class'    => 'fixed-width-xxl',
                 ],
             ],
             'submit' => [
@@ -298,7 +332,11 @@ class Urbit_inventoryfeed extends Module
 
         foreach (array_keys($form_values) as $key) {
             if (($key == 'URBIT_INVENTORYFEED_TAGS_IDS') || ($key == 'URBIT_INVENTORYFEED_FILTER_CATEGORIES')) {
-                Configuration::updateValue($key, implode(',', Tools::getValue($key)));
+                if ($value = Tools::getValue($key)) {
+                    Configuration::updateValue($key, implode(',', $value));
+                } else {
+                    Configuration::updateValue($key,  null);
+                }
             } else {
                 Configuration::updateValue($key, Tools::getValue($key));
             }
