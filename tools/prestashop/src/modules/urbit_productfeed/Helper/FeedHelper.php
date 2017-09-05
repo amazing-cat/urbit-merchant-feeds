@@ -33,7 +33,7 @@ class Urbit_Productfeed_FeedHelper
 
         $filePath = $this->getCacheFilePath();
 
-        return file_exists($filePath) && (time() - filemtime($filePath)) < ($cacheDuration * 60);
+        return file_exists($filePath) && (time() - filemtime($filePath)) < ($cacheDuration * 60 * 60);
     }
 
     /**

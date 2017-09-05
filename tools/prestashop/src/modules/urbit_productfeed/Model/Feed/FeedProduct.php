@@ -141,6 +141,7 @@ class Urbit_Productfeed_FeedProduct
     public function process()
     {
         $product = $this->product;
+
         $this->processId();
         $this->description = $product->description[$this->context->language->id];
         $this->link = $product->getLink();
@@ -162,11 +163,25 @@ class Urbit_Productfeed_FeedProduct
      */
     protected function processId()
     {
-        if (!empty($this->combination)) {
-            $this->id = (isset($this->combination['reference']) && $this->combination['reference']) ? $this->combination['reference'] : $this->product->id . '-' . $this->combId;
-        } else {
-            $this->id = ($this->product->reference) ? $this->product->reference : (string)$this->product->id;
-        }
+
+        $this->id = empty($this->combination) ?
+            ($this->product->reference ? $this->product->reference : (string) $this->product->id):
+            (isset($this->combination['reference']) && $this->combination['reference'] ? $this->combination['reference'] : $this->product->id . '-' . $this->combId)
+        ;
+    }
+
+    /**
+     * @param integer $productId
+     * @param null|integer $combId
+     * @param boolean $useReduction
+     * @return string
+     */
+    protected function getPrice($productId, $combId = null, $useReduction = true)
+    {
+        return number_format(
+            Product::getPriceStatic($productId, true, ($combId ? $combId : null), 6, NULL, false, $useReduction),
+            2,'.',''
+        );
     }
 
     /**
@@ -176,96 +191,26 @@ class Urbit_Productfeed_FeedProduct
     {
         $product = $this->product;
 
-        if (!$this->combId) {
-            $specialPriceProduct = SpecificPrice:: getByProductId($product->id);
+        $regularPrice = $this->getPrice($product->id, $this->combId, false);
+        $salePrice    = $this->getPrice($product->id, $this->combId, true);
 
-            if ((!empty($specialPriceProduct)) && ((float)$specialPriceProduct[0]['reduction'] > 0.00)) {
-                $prices = [
-                    [
-                        "currency" => $this->currencyCode,
-                        "value"    => number_format($product->price, 2, '.', ''),
-                        "type"     => "regular",
-                    ],
-                    [
-                        "currency" => $this->currencyCode,
-                        "value"    => Product::getPriceStatic($product->id),
-                        "type"     => "sale",
-                    ],
-                ];
-            } else {
-                $prices = [
-                    [
-                        "currency" => $this->currencyCode,
-                        "value"    => number_format($product->price, 2, '.', ''),
-                        "type"     => "regular",
-                    ],
-                ];
-            }
-        } else {
-            //Special Price
-            $specialPriceProduct = SpecificPrice:: getByProductId($product->id);
-            $specialPrice = SpecificPrice:: getByProductId($product->id, $this->combId);
+        $prices = [
+            [
+                "currency" => $this->currencyCode,
+                "value"    => $regularPrice,
+                "type"     => "regular",
+            ],
+        ];
 
-            if ((!empty($specialPrice)) && ((float)$specialPrice[0]['reduction'] > 0.00)) {
-                $prices = [
-                    [
-                        "currency" => $this->currencyCode,
-                        "value"    => $this->getFullPrice((float)$this->combination['price'], $specialPrice[0]['reduction_type'], (float)$specialPrice[0]['reduction']),
-                        "type"     => "regular",
-                    ],
-                    [
-                        "currency" => $this->currencyCode,
-                        "value"    => $this->combination['price'],
-                        "type"     => "sale",
-                    ],
-                ];
-            } elseif ((!empty($specialPriceProduct)) && ((float)$specialPriceProduct[0]['id_product_attribute'] == 0)) {
-                $prices = [
-                    [
-                        "currency" => $this->currencyCode,
-                        "value"    => $this->getFullPrice((float)$this->combination['price'], $specialPriceProduct[0]['reduction_type'], (float)$specialPriceProduct[0]['reduction']),
-                        "type"     => "regular",
-                    ],
-                    [
-                        "currency" => $this->currencyCode,
-                        "value"    => $this->combination['price'],
-                        "type"     => "sale",
-                    ],
-                ];
-            } else {
-                // Regular price
-                $prices = [
-                    [
-                        "currency" => $this->currencyCode,
-                        "value"    => $this->combination['price'],
-                        "type"     => "regular",
-                    ],
-                ];
-            }
+        if ($regularPrice !== $salePrice) {
+            $prices[] = [
+                "currency" => $this->currencyCode,
+                "value"    => $salePrice,
+                "type"     => "sale",
+            ];
         }
 
         $this->prices = $prices;
-    }
-
-    /**
-     * return full product price from sale price
-     * @param $price
-     * @param $reductionType
-     * @param $reductionValue
-     * @return string
-     */
-    protected function getFullPrice($price, $reductionType, $reductionValue)
-    {
-        switch ($reductionType) {
-            case 'amount':
-                return $price + $reductionValue;
-                break;
-            case 'percentage':
-                return number_format(floor(($price / (1.00 - $reductionValue)) * 100) / 100, 2, '.', '');
-                break;
-        }
-
-        return $price;
     }
 
     /*
@@ -449,10 +394,6 @@ class Urbit_Productfeed_FeedProduct
 
             $fieldValue = $this->getFieldValueAndNameByConfigValue($this->getConfigureValueByName($FieldName));
 
-            if ($FieldName == 'ean') {
-                print_r($this->getConfigureValueByName($FieldName));
-                exit;
-            }
             if (!empty($fieldValue)) {
                 $this->{$FieldName} = $fieldValue;
             }

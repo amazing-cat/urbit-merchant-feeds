@@ -43,9 +43,10 @@ class Urbit_inventoryfeed extends Module
     {
         Configuration::updateValue('URBIT_INVENTORYFEED_LIVE_MODE', false);
 
-        return parent::install() &&
-            $this->registerHook('header') &&
-            $this->registerHook('backOfficeHeader');
+        return parent::install()
+            && $this->registerHook('header')
+            && $this->registerHook('backOfficeHeader')
+        ;
     }
 
     /**
@@ -186,7 +187,10 @@ class Urbit_inventoryfeed extends Module
      */
     protected function getCategoryInfo($category, $arr, $pref)
     {
-        $arr[] = ['id' => $category['id_category'], 'name' => $pref . $category['name']];
+        $arr[] = [
+            'id'   => $category['id_category'],
+            'name' => $pref . $category['name'],
+        ];
 
         if (array_key_exists('children', $category)) {
             foreach ($category['children'] as $child) {
@@ -206,8 +210,12 @@ class Urbit_inventoryfeed extends Module
         $optionsForTagSelect = [];
 
         $tags = Tag::getMainTags($this->context->language->id);
+
         foreach ($tags as $tag) {
-            $optionsForTagSelect[] = ['id' => $tag['name'], 'name' => $tag['name']];
+            $optionsForTagSelect[] = [
+                'id'   => $tag['name'],
+                'name' => $tag['name'],
+            ];
         }
 
         return $optionsForTagSelect;
@@ -331,7 +339,7 @@ class Urbit_inventoryfeed extends Module
         $form_values = $this->getConfigFormValues();
 
         foreach (array_keys($form_values) as $key) {
-            if (($key == 'URBIT_INVENTORYFEED_TAGS_IDS') || ($key == 'URBIT_INVENTORYFEED_FILTER_CATEGORIES')) {
+            if (in_array($key, ['URBIT_INVENTORYFEED_TAGS_IDS', 'URBIT_INVENTORYFEED_FILTER_CATEGORIES'])) {
                 if ($value = Tools::getValue($key)) {
                     Configuration::updateValue($key, implode(',', $value));
                 } else {

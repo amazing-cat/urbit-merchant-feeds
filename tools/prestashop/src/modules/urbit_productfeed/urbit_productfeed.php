@@ -45,9 +45,10 @@ class Urbit_productfeed extends Module
 
         include(dirname(__FILE__) . '/sql/install.php');
 
-        return parent::install() &&
-            $this->registerHook('header') &&
-            $this->registerHook('backOfficeHeader');
+        return parent::install()
+            && $this->registerHook('header')
+            && $this->registerHook('backOfficeHeader')
+        ;
     }
 
     /**
@@ -101,6 +102,7 @@ class Urbit_productfeed extends Module
         $helper->token = Tools::getAdminTokenLite('AdminModules');
 
         $valueArray = $this->getConfigFormValues();
+
         $valueArray['URBIT_PRODUCTFEED_ATTRIBUTE_ADDITIONAL_ATTRIBUTE[]'] = explode(',', Configuration::get('URBIT_PRODUCTFEED_ATTRIBUTE_ADDITIONAL_ATTRIBUTE', null));
         $valueArray['URBIT_PRODUCTFEED_TAGS_IDS[]'] = explode(',', Configuration::get('URBIT_PRODUCTFEED_TAGS_IDS', null));
         $valueArray['URBIT_PRODUCTFEED_FILTER_CATEGORIES[]'] = explode(',', Configuration::get('URBIT_PRODUCTFEED_FILTER_CATEGORIES', null));
@@ -168,18 +170,27 @@ class Urbit_productfeed extends Module
 
     /**
      * return options for attributes selects
+     * @param bool $withNotSetted
      * @return array
      */
     protected function getAttributesOptions($withNotSetted = false)
     {
         $optionsForAttributeSelect = [];
+
         if ($withNotSetted) {
-            $optionsForAttributeSelect[] = ['id' => '', 'name' => 'Not Setted'];
+            $optionsForAttributeSelect[] = [
+                'id'   => '',
+                'name' => 'Not Setted',
+            ];
         }
+
 
         $attributes = Attribute::getAttributes($this->context->language->id);
         foreach ($attributes as $attribute) {
-            $optionsForAttributeSelect[] = ['id' => $attribute['id_attribute_group'], 'name' => $attribute['attribute_group']];
+            $optionsForAttributeSelect[] = [
+                'id'   => $attribute['id_attribute_group'],
+                'name' => $attribute['attribute_group'],
+            ];
         }
 
         return array_unique($optionsForAttributeSelect, SORT_REGULAR);
@@ -210,7 +221,10 @@ class Urbit_productfeed extends Module
      */
     protected function getCategoryInfo($category, $arr, $pref)
     {
-        $arr[] = ['id' => $category['id_category'], 'name' => $pref . $category['name']];
+        $arr[] = [
+            'id'   => $category['id_category'],
+            'name' => $pref . $category['name'],
+        ];
 
         if (array_key_exists('children', $category)) {
             foreach ($category['children'] as $child) {
@@ -617,7 +631,7 @@ class Urbit_productfeed extends Module
     {
         $form_values = $this->getConfigFormValues();
         foreach (array_keys($form_values) as $key) {
-            if (($key == 'URBIT_PRODUCTFEED_ATTRIBUTE_ADDITIONAL_ATTRIBUTE') || ($key == 'URBIT_PRODUCTFEED_TAGS_IDS') || ($key == 'URBIT_PRODUCTFEED_FILTER_CATEGORIES')) {
+            if (in_array($key, ['URBIT_PRODUCTFEED_ATTRIBUTE_ADDITIONAL_ATTRIBUTE', 'URBIT_PRODUCTFEED_TAGS_IDS', 'URBIT_PRODUCTFEED_FILTER_CATEGORIES'])) {
                 if ($value = Tools::getValue($key)) {
                     Configuration::updateValue($key, implode(',', $value));
                 } else {
@@ -639,12 +653,19 @@ class Urbit_productfeed extends Module
         $optionsForDimensionsSelect = [];
 
         if ($withNotSetted) {
-            $optionsForDimensionsSelect[] = ['id' => '', 'name' => 'Not Setted'];
+            $optionsForDimensionsSelect[] = [
+                'id'   => '',
+                'name' => 'Not Setted',
+            ];
         }
 
         $features = Feature::getFeatures($this->context->language->id);
+
         foreach ($features as $feature) {
-            $optionsForDimensionsSelect[] = ['id' => $feature['id_feature'], 'name' => $feature['name']];
+            $optionsForDimensionsSelect[] = [
+                'id'   => $feature['id_feature'],
+                'name' => $feature['name'],
+            ];
         }
 
         return array_unique($optionsForDimensionsSelect, SORT_REGULAR);
@@ -659,17 +680,28 @@ class Urbit_productfeed extends Module
     {
         $options = [];
         if ($withNotSetted) {
-            $options[] = ['id' => '', 'name' => 'Not Setted'];
+            $options[] = [
+                'id'   => '',
+                'name' => 'Not Setted',
+            ];
         }
 
         $attributes = Attribute::getAttributes($this->context->language->id);
+
         foreach ($attributes as $attribute) {
-            $options[] = ['id' => 'a' . $attribute['id_attribute_group'], 'name' => $attribute['attribute_group']];
+            $options[] = [
+                'id'   => 'a' . $attribute['id_attribute_group'],
+                'name' => $attribute['attribute_group'],
+            ];
         }
 
         $features = Feature::getFeatures($this->context->language->id);
+
         foreach ($features as $feature) {
-            $options[] = ['id' => 'f' . $feature['id_feature'], 'name' => $feature['name']];
+            $options[] = [
+                'id'   => 'f' . $feature['id_feature'],
+                'name' => $feature['name'],
+            ];
         }
 
         return array_unique($options, SORT_REGULAR);

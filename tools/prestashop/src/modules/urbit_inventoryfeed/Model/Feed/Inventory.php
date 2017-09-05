@@ -142,11 +142,10 @@ class Urbit_Inventoryfeed_Inventory
     {
         $product = $this->product;
 
-        if (!empty($this->combination)) {
-            $this->id = ($this->combination['reference']) ? $this->combination['reference'] : $product->id . '-' . $this->combId;
-        } else {
-            $this->id = ($product->reference) ? $product->reference : (string)$product->id;
-        }
+        $this->id = empty($this->combination) ?
+            ($product->reference ? $product->reference : (string) $product->id):
+            ($this->combination['reference'] ? $this->combination['reference'] : $product->id . '-' . $this->combId)
+        ;
 
         //add inventory information to feed
         $positive_quantity = $this->processInventory();
@@ -161,78 +160,43 @@ class Urbit_Inventoryfeed_Inventory
     }
 
     /**
+     * @param integer $productId
+     * @param null|integer $combId
+     * @param boolean $useReduction
+     * @return string
+     */
+    protected function getPrice($productId, $combId = null, $useReduction = true)
+    {
+        return number_format(
+            Product::getPriceStatic($productId, true, ($combId ? $combId : null), 6, NULL, false, $useReduction),
+            2,'.',''
+        );
+    }
+
+    /**
      * Process product prices
      */
     protected function processPrices()
     {
         $product = $this->product;
 
-        if (!$this->combId) {
-            $specialPriceProduct = SpecificPrice:: getByProductId($product->id);
+        $regularPrice = $this->getPrice($product->id, $this->combId, false);
+        $salePrice    = $this->getPrice($product->id, $this->combId, true);
 
-            if ((!empty($specialPriceProduct)) && ((float)$specialPriceProduct[0]['reduction'] > 0.00)) {
-                $prices = [
-                    [
-                        "currency" => $this->currencyCode,
-                        "value"    => number_format($product->price, 2, '.', ''),
-                        "type"     => "regular",
-                    ],
-                    [
-                        "currency" => $this->currencyCode,
-                        "value"    => Product::getPriceStatic($product->id),
-                        "type"     => "sale",
-                    ],
-                ];
-            } else {
-                $prices = [
-                    [
-                        "currency" => $this->currencyCode,
-                        "value"    => number_format($product->price, 2, '.', ''),
-                        "type"     => "regular",
-                    ],
-                ];
-            }
-        } else {
-            //Special Price
-            $specialPriceProduct = SpecificPrice:: getByProductId($product->id);
-            $specialPrice = SpecificPrice:: getByProductId($product->id, $this->combId);
+        $prices = [
+            [
+                "currency" => $this->currencyCode,
+                "value"    => $regularPrice,
+                "type"     => "regular",
+            ],
+        ];
 
-            if ((!empty($specialPrice)) && ((float)$specialPrice[0]['reduction'] > 0.00)) {
-                $prices = [
-                    [
-                        "currency"      => $this->currencyCode,
-                        "value"         => $this->getFullPrice((float)$this->combination['price'], $specialPrice[0]['reduction_type'], (float)$specialPrice[0]['reduction']),
-                        "type"          => "regular",
-                    ],
-                    [
-                        "currency" => $this->currencyCode,
-                        "value"    => $this->combination['price'],
-                        "type"     => "sale",
-                    ],
-                ];
-            } elseif ((!empty($specialPriceProduct)) && ((float)$specialPriceProduct[0]['id_product_attribute'] == 0)) {
-                $prices = [
-                    [
-                        "currency" => $this->currencyCode,
-                        "value"    => $this->getFullPrice((float)$this->combination['price'], $specialPriceProduct[0]['reduction_type'], (float)$specialPriceProduct[0]['reduction']),
-                        "type"     => "regular",
-                    ],
-                    [
-                        "currency" => $this->currencyCode,
-                        "value"    => $this->combination['price'],
-                        "type"     => "sale",
-                    ],
-                ];
-            } else {
-                // Regular price
-                $prices = [
-                    [
-                        "currency" => $this->currencyCode,
-                        "value"    => $this->combination['price'],
-                        "type"     => "regular",
-                    ],
-                ];
-            }
+        if ($regularPrice !== $salePrice) {
+            $prices[] = [
+                "currency" => $this->currencyCode,
+                "value"    => $salePrice,
+                "type"     => "sale",
+            ];
         }
 
         $this->prices = $prices;
@@ -261,17 +225,15 @@ class Urbit_Inventoryfeed_Inventory
             $quantity = Product::getQuantity($this->product->id);
             $location = ((isset($this->product->location)) && ($this->product->location != '')) ? $this->product->location : 1;
 
-            $inventory[] = [
-                'location' => $location, // Location of current stock
-                'quantity' => $quantity,   // Currently stocked items for location
-            ];
         } else {
             $location = ((isset($this->combination['location'])) && ($this->combination['location'] != '')) ? $this->combination['location'] : 1;
-            $inventory[] = [
-                'location' => $location, // Location of current stock
-                'quantity' => $this->combination['quantity'],   // Currently stocked items for location
-            ];
+            $quantity = $this->combination['quantity'];
         }
+
+        $inventory[] = [
+            'location' => $location, // Location of current stock
+            'quantity' => $quantity, // Currently stocked items for location
+        ];
 
         $this->inventory = $inventory;
 

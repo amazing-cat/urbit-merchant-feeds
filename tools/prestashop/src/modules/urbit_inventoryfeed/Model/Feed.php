@@ -205,6 +205,7 @@ class Urbit_Inventoryfeed_Feed
         if (!Validate::isOrderBy($order_by) || !Validate::isOrderWay($order_way)) {
             die(Tools::displayError());
         }
+
         if ($order_by == 'id_product' || $order_by == 'price' || $order_by == 'date_add' || $order_by == 'date_upd') {
             $order_by_prefix = 'p';
         } elseif ($order_by == 'name') {
