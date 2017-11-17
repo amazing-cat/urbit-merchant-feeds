@@ -110,7 +110,7 @@ class Urbit_Inventoryfeed_Inventory
      */
     public function __call($name, $arguments)
     {
-        $property = strtolower(preg_replace("/^unset/", $name));
+        $property = strtolower(preg_replace("/^unset/", '', $name));
         $propertyExist = isset($this->data[$property]);
 
         if ($propertyExist) {
@@ -140,12 +140,7 @@ class Urbit_Inventoryfeed_Inventory
      */
     public function process()
     {
-        $product = $this->product;
-
-        $this->id = empty($this->combination) ?
-            ($product->reference ? $product->reference : (string) $product->id):
-            ($this->combination['reference'] ? $this->combination['reference'] : $product->id . '-' . $this->combId)
-        ;
+        $this->processId();
 
         //add inventory information to feed
         $positive_quantity = $this->processInventory();
@@ -156,21 +151,56 @@ class Urbit_Inventoryfeed_Inventory
 
         //add price information to feed
         $this->processPrices();
+
         return true;
     }
 
     /**
-     * @param integer $productId
-     * @param null|integer $combId
-     * @param boolean $useReduction
-     * @return string
+     * @param string $name
+     * @return mixed
      */
-    protected function getPrice($productId, $combId = null, $useReduction = true)
+    protected function _processAttribute($name)
     {
-        return number_format(
-            Product::getPriceStatic($productId, true, ($combId ? $combId : null), 6, NULL, false, $useReduction),
-            2,'.',''
-        );
+        return Urbit_Inventoryfeed_Fields_Factory::processAttribute($this, $name);
+    }
+
+    /**
+     * @param string $key
+     * @return mixed
+     */
+    protected function _processAttributeByKey($key)
+    {
+        return Urbit_Inventoryfeed_Fields_Factory::processAttributeByKey($this, $key);
+    }
+
+
+    /**
+     * @param string $name
+     * @param string $key
+     * @return mixed
+     */
+    protected function _processAttributeOrByKey($name, $key)
+    {
+        return $this->_processAttribute($name) ?: $this->_processAttributeByKey($key);
+    }
+
+    /**
+     * Process product id
+     * add to feed product id
+     */
+    protected function processId()
+    {
+        if ($id = $this->_processAttribute('URBIT_INVENTORYFEED_ATTRIBUTE_ID')) {
+            $this->id = (string)$id . (empty($this->combination) ? '' : '-' . $this->getCombId());
+        } elseif (empty($this->combination)) {
+            $this->id = (string)$this->getProduct()->id;
+        } else {
+            $combinations = $this->getCombination();
+            $true = isset($combinations['reference']) && $combinations['reference'];
+            $cid = $this->getCombId();
+
+            $this->id = $true ? $combinations['reference'] . '-' . $cid : $this->getProduct()->id . '-' . $cid;
+        }
     }
 
     /**
@@ -178,66 +208,101 @@ class Urbit_Inventoryfeed_Inventory
      */
     protected function processPrices()
     {
-        $product = $this->product;
+        $prices = [];
 
-        $regularPrice = $this->getPrice($product->id, $this->combId, false);
-        $salePrice    = $this->getPrice($product->id, $this->combId, true);
+        $regularPrice = $this->_processAttributeOrByKey('URBIT_INVENTORYFEED_REGULAR_PRICE_VALUE', 'calc_RegularPrice');
+        $salePrice    = $this->_processAttributeOrByKey('URBIT_INVENTORYFEED_SALE_PRICE_VALUE', 'calc_SalePrice');
 
-        $prices = [
-            [
-                "currency" => $this->currencyCode,
-                "value"    => $regularPrice,
-                "type"     => "regular",
-            ],
+        // regular price
+        $prices[] = [
+            'currency' => $this->_processAttributeOrByKey('URBIT_INVENTORYFEED_REGULAR_PRICE_CURRENCY', 'calc_Currency'),
+            'value'    => $regularPrice,
+            'vat'      => $this->_processAttributeOrByKey('URBIT_INVENTORYFEED_REGULAR_PRICE_VAT', 'calc_TaxRate'),
+            'type'     => 'regular',
         ];
 
-        if ($regularPrice !== $salePrice) {
-            $prices[] = [
-                "currency" => $this->currencyCode,
-                "value"    => $salePrice,
-                "type"     => "sale",
+        //sale price
+        if ($salePrice != $regularPrice) {
+            $sPrice = [
+                'currency' => $this->_processAttributeOrByKey('URBIT_INVENTORYFEED_SALE_PRICE_CURRENCY', 'calc_Currency'),
+                'value'    => $salePrice,
+                'vat'      => $this->_processAttributeOrByKey('URBIT_INVENTORYFEED_SALE_PRICE_VAT', 'calc_TaxRate'),
+                'type'     => 'sale',
             ];
+
+            if ($salePriceDate = $this->_processAttribute('URBIT_INVENTORYFEED_PRICE_EFFECTIVE_DATE')) {
+                $sPrice['price_effective_date'] = $salePriceDate;
+            }
+
+            $prices[] = $sPrice;
         }
 
         $this->prices = $prices;
     }
 
-    protected function getFullPrice($price, $reductionType, $reductionValue)
-    {
-
-        switch ($reductionType) {
-            case 'amount':
-                return $price + $reductionValue;
-                break;
-            case 'percentage':
-                return number_format(floor(($price / (1.00 - $reductionValue)) * 100) / 100, 2, '.', '');
-                break;
-        }
-
-        return $price;
-    }
-
+    /**
+     * Process product inventory
+     */
     protected function processInventory()
     {
-        $inventory = [];
+        $location = $this->_processAttributeOrByKey('URBIT_INVENTORYFEED_INVENTORY_LOCATION', 'calc_Location');
+        $qty      = $this->_processAttributeOrByKey('URBIT_INVENTORYFEED_INVENTORY_QUANTITY', 'calc_Quantity');
 
-        if (!$this->combId) {
-            $quantity = Product::getQuantity($this->product->id);
-            $location = ((isset($this->product->location)) && ($this->product->location != '')) ? $this->product->location : 1;
-
-        } else {
-            $location = ((isset($this->combination['location'])) && ($this->combination['location'] != '')) ? $this->combination['location'] : 1;
-            $quantity = $this->combination['quantity'];
+        if ($qty <= 0) {
+            return false;
         }
 
-        $inventory[] = [
-            'location' => $location, // Location of current stock
-            'quantity' => $quantity, // Currently stocked items for location
-        ];
-
-        $this->inventory = $inventory;
+        $this->inventory = [[
+            'location' => $location,
+            'quantity' => $qty,
+        ]];
 
         return true;
+    }
+
+    /**
+     * @return Object|Product
+     */
+    public function getProduct()
+    {
+        return $this->product;
+    }
+
+    /**
+     * @param string $name
+     * @return string
+     */
+    public function getProductAttribute($name)
+    {
+        if (isset($this->product->{$name})) {
+            return $this->product->{$name};
+        }
+
+        return '';
+    }
+
+    /**
+     * @return Context|object
+     */
+    public function getContext()
+    {
+        return $this->context;
+    }
+
+    /**
+     * @return array|null
+     */
+    public function getCombination()
+    {
+        return $this->combination;
+    }
+
+    /**
+     * @return int|null
+     */
+    public function getCombId()
+    {
+        return $this->combId;
     }
 
     /**
@@ -248,7 +313,44 @@ class Urbit_Inventoryfeed_Inventory
     protected function getCurrencyCode()
     {
         $context = Context::getContext();
+
         return $context->currency->iso_code;
     }
 
+    /**
+     * @param $configValue
+     * @return null
+     */
+    protected function getFieldValueByConfigValue($configValue)
+    {
+        $product = $this->product;
+        $type = substr($configValue, 0, 1);
+        $id = substr($configValue, 1);
+
+        switch ($type) {
+            // attribute
+            case 'a':
+                $attributeCombinations = $product->getAttributeCombinations($this->context->language->id);
+
+                foreach ($attributeCombinations as $attributeCombination) {
+                    if ($attributeCombination['id_product_attribute'] == $this->combId && $attributeCombination['id_attribute_group'] == $id) {
+                        return $attributeCombination['attribute_name'];
+                    }
+                }
+                break;
+
+            // feature
+            case 'f':
+                $FrontFeatures = $product->getFrontFeatures($this->context->language->id);
+
+                foreach ($FrontFeatures as $frontFeature) {
+                    if ($frontFeature['id_feature'] == $id) {
+                        return $frontFeature['value'];
+                    }
+                }
+                break;
+        }
+
+        return null;
+    }
 }

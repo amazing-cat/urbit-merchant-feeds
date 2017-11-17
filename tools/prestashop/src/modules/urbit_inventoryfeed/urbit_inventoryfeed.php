@@ -3,16 +3,26 @@
 if (!defined('_PS_VERSION_')) {
     exit;
 }
+require_once dirname(__FILE__) . '/Model/Feed/Inventory.php';
+
+require_once dirname(__FILE__) . '/Model/Feed/Fields/Factory.php';
 
 /**
  * Class Urbit_inventoryfeed
  */
 class Urbit_inventoryfeed extends Module
 {
+    const NAME = 'urbit_inventoryfeed';
+
     /**
      * @var bool
      */
     protected $config_form = false;
+
+    /**
+     * @var array
+     */
+    protected $fields = [];
 
     /**
      * Urbit_inventoryfeed constructor.
@@ -24,6 +34,10 @@ class Urbit_inventoryfeed extends Module
         $this->version = '1.0.0';
         $this->author = 'Urbit';
         $this->need_instance = 1;
+
+        $this->fields = [
+            'factory' => new Urbit_Inventoryfeed_Fields_Factory(),
+        ];
 
         /**
          * Set $this->bootstrap to true if your module is compliant with bootstrap (PrestaShop 1.6)
@@ -37,6 +51,14 @@ class Urbit_inventoryfeed extends Module
     }
 
     /**
+     * @return Module
+     */
+    public static function getInstance()
+    {
+        return Module::getInstanceByName(static::NAME);
+    }
+
+    /**
      * @return bool
      */
     public function install()
@@ -45,8 +67,7 @@ class Urbit_inventoryfeed extends Module
 
         return parent::install()
             && $this->registerHook('header')
-            && $this->registerHook('backOfficeHeader')
-        ;
+            && $this->registerHook('backOfficeHeader');
     }
 
     /**
@@ -67,7 +88,7 @@ class Urbit_inventoryfeed extends Module
         /**
          * If values have been submitted in the form, process.
          */
-        if (((bool)Tools::isSubmit('submitUrbit_inventoryfeedModule')) == true) {
+        if ((!!Tools::isSubmit('submitUrbit_inventoryfeedModule')) == true) {
             $this->postProcess();
         }
 
@@ -225,6 +246,10 @@ class Urbit_inventoryfeed extends Module
     {
         return [
             [
+                'id'   => 0.00000001,
+                'name' => 'DISABLE CACHE',
+            ],
+            [
                 'id'   => 60,
                 'name' => '1 hour',
             ],
@@ -247,6 +272,26 @@ class Urbit_inventoryfeed extends Module
         ];
     }
 
+    protected function getCountriesOptions($withNotSetted = false)
+    {
+        $optionsForTaxesSelect = [];
+
+        if ($withNotSetted) {
+            $optionsForTaxesSelect[] = [
+                'id'   => '',
+                'name' => 'Not Setted',
+            ];
+        }
+
+        $countries = Country::getCountries($this->context->language->id);
+
+        foreach ($countries as $country) {
+            $optionsForTaxesSelect[] = ['id' => $country['id_country'], 'name' => $country['name']];
+        }
+
+        return $optionsForTaxesSelect;
+    }
+
     /**
      * @return array
      */
@@ -255,6 +300,7 @@ class Urbit_inventoryfeed extends Module
         $optionsForCategorySelect = $this->getCategoriesOptions();
         $optionsForTagSelect = $this->getTagsOptions();
         $optionsForCacheSelect = $this->getCacheOptions();
+        $optionsForTaxes = $this->getCountriesOptions(true);
 
         $fields_form = [];
 
@@ -276,6 +322,9 @@ class Urbit_inventoryfeed extends Module
                     ],
                     'class'   => 'fixed-width-xxl',
                 ],
+            ],
+            'submit' => [
+                'title' => $this->l('Save'),
             ],
         ];
 
@@ -314,6 +363,79 @@ class Urbit_inventoryfeed extends Module
             'submit' => [
                 'title' => $this->l('Save'),
             ],
+
+        ];
+
+        //Taxes
+        $fields_form[2]['form'] = [
+            'legend' => [
+                'title' => $this->l('Taxes'),
+                'icon'  => 'icon-cogs',
+            ],
+            'input'  => [
+                [
+                    'type'     => 'select',
+                    'label'    => $this->l('Country'),
+                    'name'     => 'URBIT_INVENTORYFEED_TAX_COUNTRY',
+                    'multiple' => false,
+                    'options'  => [
+                        'query' => $optionsForTaxes,
+                        'id'    => 'id',
+                        'name'  => 'name',
+                    ],
+                    'class'    => 'fixed-width-xxl',
+                ],
+            ],
+            'submit' => [
+                'title' => $this->l('Save'),
+            ],
+        ];
+
+        //Inventory Dimentions
+        $fields_form[3]['form'] = [
+            'legend' => [
+                'title' => $this->l('Product Fields - Product Dimentions'),
+                'icon'  => 'icon-cogs',
+            ],
+            'input'  => $this->fields['factory']->getInputs(),
+            'submit' => [
+                'title' => $this->l('Save'),
+            ],
+        ];
+
+        //Inventory
+        $fields_form[4]['form'] = [
+            'legend' => [
+                'title' => $this->l('Product Fields - Inventory'),
+                'icon'  => 'icon-cogs',
+            ],
+            'input'  => $this->fields['factory']->getInventoryInputs(),
+            'submit' => [
+                'title' => $this->l('Save'),
+            ],
+        ];
+
+        //Prices
+        $fields_form[5]['form'] = [
+            'legend' => [
+                'title' => $this->l('Product Fields - Prices'),
+                'icon'  => 'icon-cogs',
+            ],
+            'input'  => $this->fields['factory']->getPriceInputs(),
+            'submit' => [
+                'title' => $this->l('Save'),
+            ],
+        ];
+
+        $fields_form[6]['form'] = [
+            'legend' => [
+                'title' => $this->l('Custom Inventory List'),
+                'icon'  => 'icon-cogs',
+            ],
+            'input'  => $this->fields['factory']->getInventoryListInputs(),
+            'submit' => [
+                'title' => $this->l('Save'),
+            ],
         ];
 
         return $fields_form;
@@ -324,11 +446,18 @@ class Urbit_inventoryfeed extends Module
      */
     protected function getConfigFormValues()
     {
-        return [
-            'URBIT_INVENTORYFEED_CACHE_DURATION'    => Configuration::get('URBIT_INVENTORYFEED_CACHE_DURATION', null),
-            'URBIT_INVENTORYFEED_FILTER_CATEGORIES' => explode(',', Configuration::get('URBIT_INVENTORYFEED_FILTER_CATEGORIES', null)),
-            'URBIT_INVENTORYFEED_TAGS_IDS'          => explode(',', Configuration::get('URBIT_INVENTORYFEED_TAGS_IDS', null)),
-        ];
+        return array_merge(
+            [
+                'URBIT_INVENTORYFEED_CACHE_DURATION'    => Configuration::get('URBIT_INVENTORYFEED_CACHE_DURATION', null),
+                'URBIT_INVENTORYFEED_FILTER_CATEGORIES' => explode(',', Configuration::get('URBIT_INVENTORYFEED_FILTER_CATEGORIES', null)),
+                'URBIT_INVENTORYFEED_TAGS_IDS'          => explode(',', Configuration::get('URBIT_INVENTORYFEED_TAGS_IDS', null)),
+                'URBIT_INVENTORYFEED_TAX_COUNTRY'       => Configuration::get('URBIT_INVENTORYFEED_TAX_COUNTRY', null),
+            ],
+            $this->fields['factory']->getInputsConfig(),
+            $this->fields['factory']->getPriceInputsConfig(),
+            $this->fields['factory']->getInventoryInputsConfig(),
+            $this->fields['factory']->getInventoryListInputsConfig()
+        );
     }
 
     /**
@@ -343,7 +472,7 @@ class Urbit_inventoryfeed extends Module
                 if ($value = Tools::getValue($key)) {
                     Configuration::updateValue($key, implode(',', $value));
                 } else {
-                    Configuration::updateValue($key,  null);
+                    Configuration::updateValue($key, null);
                 }
             } else {
                 Configuration::updateValue($key, Tools::getValue($key));
